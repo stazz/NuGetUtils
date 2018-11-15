@@ -80,9 +80,16 @@ namespace NuGetUtils.MSBuild.Exec
          
          if ( taskFactoryVersion != null )
          {
+            var nugetSpecificPath = GetTaskFactoryFilePath( thisDir, thisName, taskFactoryVersion );
+            var nugetSpecificDir = Path.GetDirectoryName( nugetSpecificPath );
+            thisLoader.Resolving += (ctx, an) => {
+              var anPath = Path.Combine(nugetSpecificDir, an.Name + ".dll");
+              return File.Exists(anPath) ? thisLoader.LoadFromAssemblyPath( anPath ) : null; 
+            };
+            
             try
             {
-              this._loaded = (ITaskFactory)Activator.CreateInstance( thisLoader.LoadFromAssemblyPath( GetTaskFactoryFilePath( thisDir, thisName, taskFactoryVersion ) ).GetType( this.GetType().FullName ) );
+              this._loaded = (ITaskFactory)Activator.CreateInstance( thisLoader.LoadFromAssemblyPath( nugetSpecificPath ).GetType( this.GetType().FullName ) );
             }
             catch ( Exception exc)
             {
@@ -94,25 +101,24 @@ namespace NuGetUtils.MSBuild.Exec
          this._taskFactoryNuGetVersion = taskFactoryVersion;
       }
       
+      private const String NUGET_SPECIFIC_DIR_PREFIX = "NuGet.";
+      
       private static Version GetNewestAvailableTaskFactoryVersion( String thisDir, String thisName )
       {
-         const String DLL = ".dll";
          return Directory
-           .EnumerateFiles( thisDir, thisName + ".*" + DLL, SearchOption.TopDirectoryOnly )
+           .EnumerateDirectories( thisDir, NUGET_SPECIFIC_DIR_PREFIX + "*", SearchOption.TopDirectoryOnly )
            .Select( fp =>
            {
-               var endIdx = fp.LastIndexOf( '.' );
-               var startIdx = fp.LastIndexOf( thisName, endIdx - 1 );
-               startIdx += thisName.Length + THIS_NAME_SUFFIX.Length;
-               try {return Version.Parse( fp.Substring( startIdx, endIdx - startIdx ) ); } catch { throw new Exception(fp + "\n" + startIdx + ":" + endIdx ); }
+               try {return Version.Parse( Path.GetDirectoryName(fp).Substring(14) ); } catch { return null; }
             } )
-            .OrderByDescending( v => v )
-            .FirstOrDefault();
+           .Where(v => v != null)
+           .OrderByDescending( v => v )
+           .FirstOrDefault();
       }
       
       private static String GetTaskFactoryFilePath( String thisDir, String thisName, Version version )
       {
-         return Path.Combine( thisDir, thisName + THIS_NAME_SUFFIX + ExtractVersionString( version ) + ".dll" );
+         return Path.Combine( thisDir, NUGET_SPECIFIC_DIR_PREFIX + ExtractVersionString( version ), thisName + ".NuGetSpecific.dll" );
       }
       
       private static Boolean VersionsMatch(Version v1, Version v2)

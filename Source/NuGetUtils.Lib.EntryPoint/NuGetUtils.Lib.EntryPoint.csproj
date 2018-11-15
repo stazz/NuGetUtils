@@ -29,9 +29,5 @@
       <Title>Entry Point Information For $(NuGetExecToolName).</Title>
       <Description>This library contains attribute which is used by $(NuGetExecToolName) tool when it executes a method within a NuGet package. This attribute can be used to modify the behaviour of $(NuGetExecToolName) and how it detects the method to be executed.</Description>
    </PropertyGroup>
-
-   <PropertyGroup>
-      <Product>NuGetUtils</Product>
-      <AssemblyOriginatorKeyFile>$(MSBuildThisProjectDirectory)..\..\Keys\NuGetUtils.sha1.snk</AssemblyOriginatorKeyFile>
-   </PropertyGroup>
+   
 </Project>

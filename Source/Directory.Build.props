@@ -32,4 +32,12 @@
     <DebugSymbols>False</DebugSymbols>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <NuGetTargetVersion>4.9.0-rtm.5658</NuGetTargetVersion>
+    <NuGetTargetVersionDashIndex>$(NuGetTargetVersion.IndexOf('-'))</NuGetTargetVersionDashIndex>
+    <NuGetVersionPlain Condition=" '$(NuGetTargetVersionDashIndex)' != '-1' " >$(NuGetTargetVersion.Substring(0, $(NuGetTargetVersion.IndexOf('-'))))</NuGetVersionPlain>
+    <NuGetVersionPlain Condition=" '$(NuGetVersionPlain)' == ''">$(NuGetTargetVersion)</NuGetVersionPlain>
+    <DefineConstants>$(DefineConstants);NUGET_$(NuGetVersionPlain.Replace('.', ''))</DefineConstants>
+  </PropertyGroup>
 </Project>

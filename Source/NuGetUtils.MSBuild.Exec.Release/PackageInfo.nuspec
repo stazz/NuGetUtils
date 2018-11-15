@@ -7,9 +7,9 @@
     <authors>Stanislav Muhametsin</authors>
     <owners>Stanislav Muhametsin</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <licenseUrl>https://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
-    <repository url="https://github.com/stazz/UtilPack/tree/develop/Source/NuGetUtils.MSBuild.Exec" type="git" />
-    <projectUrl>https://github.com/stazz/UtilPack</projectUrl>
+    <!--<license>https://www.apache.org/licenses/LICENSE-2.0</license>-->
+    <repository url="https://github.com/stazz/NuGetUtils/tree/develop/Source/NuGetUtils.MSBuild.Exec" type="git" />
+    <projectUrl>https://github.com/stazz/NuGetUtils</projectUrl>
     <description>Provides easy way to execute NuGet-based MSBuild tasks.</description>
     <releaseNotes>The dedicated AppDomain is no longer used if the value for option "NoDedicatedAppDomain" is true. This value is only used in .NET Desktop version, and defaults to true when Mono framework is detected. Otherwise it is false.</releaseNotes>
     <copyright>Stanislav Muhametsin</copyright>
@@ -18,9 +18,9 @@
     <dependencies/>
   </metadata>
   <files>
-    <file src="bin\Release\net46\*.dll" exclude="bin\Release\net46\Microsoft.Build.Framework.dll" target="build\net46\" />
-    <file src="bin\Release\netcoreapp1.1\NuGetUtils.MSBuild.Exec.dll" target="build\netcoreapp1.1\" />
-    <file src="bin\Release\NuGetSpecific\*.dll" target="build\netcoreapp1.1\" />
+    <file src="net46\*.dll" exclude="net46\Microsoft.Build.Framework.dll" target="build\net46" />
+    <file src="netcoreapp1.1\NuGetUtils.MSBuild.Exec.dll" target="build\netcoreapp1.1\" />
+    <file src="NuGetSpecific\**\*.dll" target="build\netcoreapp1.1\" />
     <file src="build\*.*" target="build\" />
     <file src="buildMultiTargeting\*.*" target="buildMultiTargeting\" />
   </files>

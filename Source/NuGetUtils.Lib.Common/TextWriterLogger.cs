@@ -180,51 +180,51 @@ namespace NuGetUtils.Lib.Common
       //public String Format { get; set; } = DEFAULT_FORMAT;
 
       /// <summary>
-      /// Gets or sets the <see cref="TextWriter"/> for <see cref="LogLevel.Debug"/>
+      /// Gets or sets the <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Debug"/>
       /// By default, this is the <see cref="Console.Out"/>.
-      /// Set to <c>null</c> to disable logging done via <see cref="LogLevel.Debug"/>.
+      /// Set to <c>null</c> to disable logging done via <see cref="NuGet.Common.LogLevel.Debug"/>.
       /// </summary>
-      /// <value>The <see cref="TextWriter"/> for <see cref="LogLevel.Debug"/>.</value>
+      /// <value>The <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Debug"/>.</value>
       public TextWriter DebugWriter { get; set; } = Console.Out;
 
       /// <summary>
-      /// Gets or sets the <see cref="TextWriter"/> for <see cref="LogLevel.Error"/>.
+      /// Gets or sets the <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Error"/>.
       /// By default, this is the <see cref="Console.Error"/>.
-      /// Set to <c>null</c> to disable logging done via <see cref="LogLevel.Error"/>.
+      /// Set to <c>null</c> to disable logging done via <see cref="NuGet.Common.LogLevel.Error"/>.
       /// </summary>
-      /// <value>The <see cref="TextWriter"/> for <see cref="LogLevel.Error"/>.</value>
+      /// <value>The <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Error"/>.</value>
       public TextWriter ErrorWriter { get; set; } = Console.Error;
 
       /// <summary>
-      /// Gets or sets the <see cref="TextWriter"/> for <see cref="LogLevel.Information"/>.
+      /// Gets or sets the <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Information"/>.
       /// By default, this is the <see cref="Console.Out"/>.
-      /// Set to <c>null</c> to disable logging done via <see cref="LogLevel.Information"/>.
+      /// Set to <c>null</c> to disable logging done via <see cref="NuGet.Common.LogLevel.Information"/>.
       /// </summary>
-      /// <value>The <see cref="TextWriter"/> for <see cref="LogLevel.Information"/>.</value>
+      /// <value>The <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Information"/>.</value>
       public TextWriter InfoWriter { get; set; } = Console.Out;
 
       /// <summary>
-      /// Gets or sets the <see cref="TextWriter"/> for <see cref="LogLevel.Minimal"/>.
+      /// Gets or sets the <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Minimal"/>.
       /// By default, this is the <see cref="Console.Out"/>.
-      /// Set to <c>null</c> to disable logging done via <see cref="LogLevel.Minimal"/>.
+      /// Set to <c>null</c> to disable logging done via <see cref="NuGet.Common.LogLevel.Minimal"/>.
       /// </summary>
-      /// <value>The <see cref="TextWriter"/> for <see cref="LogLevel.Minimal"/>.</value>
+      /// <value>The <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Minimal"/>.</value>
       public TextWriter MinimalWriter { get; set; } = Console.Out;
 
       /// <summary>
-      /// Gets or sets the <see cref="TextWriter"/> for <see cref="LogLevel.Verbose"/>.
+      /// Gets or sets the <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Verbose"/>.
       /// By default, this is the <see cref="Console.Out"/>.
-      /// Set to <c>null</c> to disable logging done via <see cref="LogLevel.Verbose"/>.
+      /// Set to <c>null</c> to disable logging done via <see cref="NuGet.Common.LogLevel.Verbose"/>.
       /// </summary>
-      /// <value>The <see cref="TextWriter"/> for <see cref="LogLevel.Verbose"/>.</value>
+      /// <value>The <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Verbose"/>.</value>
       public TextWriter VerboseWriter { get; set; } = Console.Out;
 
       /// <summary>
-      /// Gets or sets the <see cref="TextWriter"/> for <see cref="LogLevel.Warning"/>.
+      /// Gets or sets the <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Warning"/>.
       /// By default, this is the <see cref="Console.Error"/>.
-      /// Set to <c>null</c> to disable logging done via <see cref="LogLevel.Warning"/>.
+      /// Set to <c>null</c> to disable logging done via <see cref="NuGet.Common.LogLevel.Warning"/>.
       /// </summary>
-      /// <value>The <see cref="TextWriter"/> for <see cref="LogLevel.Warning"/>.</value>
+      /// <value>The <see cref="TextWriter"/> for <see cref="NuGet.Common.LogLevel.Warning"/>.</value>
       public TextWriter WarningWriter { get; set; } = Console.Error;
    }
 }

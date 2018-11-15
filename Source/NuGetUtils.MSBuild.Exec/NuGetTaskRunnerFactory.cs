@@ -1659,7 +1659,7 @@ namespace NuGetUtils.MSBuild.Exec
 
 }
 
-public static partial class E_UtilPack
+public static partial class E_NuGetUtils
 {
    // From https://stackoverflow.com/questions/1145659/ignore-namespaces-in-linq-to-xml
    internal static IEnumerable<XElement> ElementsAnyNS<T>( this IEnumerable<T> source, String localName )

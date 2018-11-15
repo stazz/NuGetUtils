@@ -363,11 +363,11 @@ namespace NuGetUtils.Lib.Tool
             this.GetType(),
             this.LockFileCacheDirEnvName,
             this.LockFileCacheDirWithinHomeDir,
+            restorer => this.UseRestorerAsync( info, token, restorer.Restorer, restorer.SDKPackageID, restorer.SDKPackageVersion ),
             () => new TextWriterLogger()
             {
                VerbosityLevel = info.Configuration.LogLevel
-            },
-            restorer => this.UseRestorerAsync( info, token, restorer.Restorer, restorer.SDKPackageID, restorer.SDKPackageVersion )
+            }
             );
       }
 

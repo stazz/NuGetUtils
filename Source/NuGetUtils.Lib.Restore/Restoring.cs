@@ -43,6 +43,7 @@ using System.Collections.Immutable;
 using NuGetUtils.Lib.Restore;
 using NuGetUtils.Lib.Common;
 
+
 #if !NUGET_430
 using TLocalNuspecCache = NuGet.Protocol.
 #if NUGET_440 || NUGET_450
@@ -52,8 +53,10 @@ LocalPackageFileCache
 #endif
          ;
 #endif
-//using TLockFileDeserializer = System.Func<Newtonsoft.Json.Linq.JObject, NuGet.ProjectModel.LockFile>;
 
+#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
+using NuGet.Packaging.Signing;
+#endif
 
 
 
@@ -124,6 +127,9 @@ namespace NuGetUtils.Lib.Restore
       private readonly Boolean _disposeSourceCacheContext;
       private readonly LockFileFormat _lockFileFormat;
       private readonly ConcurrentDictionary<ImmutableSortedSet<String>, ImmutableDictionary<ImmutableArray<NuGetVersion>, String>> _allLockFiles;
+#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
+      private readonly ClientPolicyContext _clientPolicyContext;
+#endif
 
       /// <summary>
       /// Creates new instance of <see cref="BoundRestoreCommandUser"/> with given parameters.
@@ -235,6 +241,9 @@ namespace NuGetUtils.Lib.Restore
          }
          this._allLockFiles = new ConcurrentDictionary<ImmutableSortedSet<String>, ImmutableDictionary<ImmutableArray<NuGetVersion>, String>>();
          this._lockFileFormat = new LockFileFormat();
+#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
+         this._clientPolicyContext = ClientPolicyContext.GetClientPolicy( nugetSettings, nugetLogger );
+#endif
       }
 
       /// <summary>
@@ -353,6 +362,9 @@ namespace NuGetUtils.Lib.Restore
             this.CreatePackageSpec( targets ),
             this._restoreCommandProvider,
             this._cacheContext,
+#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
+            this._clientPolicyContext,
+#endif
             this.NuGetLogger
             )
          {
