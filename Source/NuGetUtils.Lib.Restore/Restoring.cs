@@ -89,6 +89,11 @@ namespace NuGetUtils.Lib.Restore
    /// </summary>
    public sealed class BoundRestoreCommandUser : IDisposable
    {
+      static BoundRestoreCommandUser()
+      {
+         UserAgent.SetUserAgentString( new UserAgentStringBuilder( $"{nameof( NuGetUtils )}-Based Client" ) );
+      }
+
       /// <summary>
       /// This is the default package ID of the NuGet package containing serialized runtime graph.
       /// </summary>
