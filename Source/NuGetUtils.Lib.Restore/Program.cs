@@ -80,6 +80,7 @@ public static partial class E_NuGetUtils
    /// <param name="lockFileCacheDirEnvName">The environment name of the variable holding default lock file cache directory.</param>
    /// <param name="lockFileCacheDirWithinHomeDir">The directory name within home directory of current user which can be used as lock file cache directory.</param>
    /// <param name="callback">The callback to use created <see cref="BoundRestoreCommandUser"/>. The parameter contains <see cref="BoundRestoreCommandUser"/> as first tuple component, the SDK package ID deduced using <see cref="BoundRestoreCommandUser.ThisFramework"/> and <see cref="NuGetUsageConfiguration.SDKFrameworkPackageID"/> as second tuple component, and the SDK package version deduced using <see cref="BoundRestoreCommandUser.ThisFramework"/>, SDK package ID, and <see cref="NuGetUsageConfiguration.SDKFrameworkPackageVersion"/> as third tuple component.</param>
+   /// <param name="loggerFactory">The callback to create <see cref="ILogger"/> for the <see cref="BoundRestoreCommandUser"/>. May be <c>null</c>.</param>
    /// <returns>The return value of <paramref name="callback"/>.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetUsageConfiguration"/> is <c>null</c>.</exception>
    public static TResult CreateAndUseRestorerAsync<TResult>(
@@ -87,8 +88,8 @@ public static partial class E_NuGetUtils
       EitherOr<String, Type> nugetSettingsPath,
       String lockFileCacheDirEnvName,
       String lockFileCacheDirWithinHomeDir,
-      Func<ILogger> loggerFactory,
-      Func<(BoundRestoreCommandUser Restorer, String SDKPackageID, String SDKPackageVersion), TResult> callback
+      Func<(BoundRestoreCommandUser Restorer, String SDKPackageID, String SDKPackageVersion), TResult> callback,
+      Func<ILogger> loggerFactory
       )
    {
       var targetFWString = configuration.RestoreFramework;
@@ -99,7 +100,7 @@ public static partial class E_NuGetUtils
             configuration.NuGetConfigurationFile
             ),
          thisFramework: String.IsNullOrEmpty( targetFWString ) ? null : NuGetFramework.Parse( targetFWString ),
-         nugetLogger: configuration.DisableLogging ? null : loggerFactory(),
+         nugetLogger: configuration.DisableLogging ? null : loggerFactory?.Invoke(),
          lockFileCacheDir: configuration.LockFileCacheDirectory,
          lockFileCacheEnvironmentVariableName: lockFileCacheDirEnvName,
          getDefaultLockFileCacheDir: homeDir => Path.Combine( homeDir, lockFileCacheDirWithinHomeDir ),

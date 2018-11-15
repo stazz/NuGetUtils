@@ -728,7 +728,7 @@ namespace NuGetUtils.Lib.Common
    }
 
    /// <summary>
-   /// This delegate is used by <see cref="E_NuGetUtils.ExtractAssemblyPaths"/> in order to get required assembly paths from single <see cref="LockFileTargetLibrary"/>.
+   /// This delegate is used to get required assembly paths from single <see cref="LockFileTargetLibrary"/>.
    /// </summary>
    /// <param name="runtimeGraph">The lazy holding <see cref="RuntimeGraph"/> containing information about various runtime identifiers (RIDs) and their dependencies.</param>
    /// <param name="currentRID">The current RID string.</param>

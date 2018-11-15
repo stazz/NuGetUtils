@@ -7,15 +7,20 @@
    
   <PropertyGroup>
     <TargetFrameworks Condition=" '$(TargetFramework)' == '' ">net46;netcoreapp1.1</TargetFrameworks>
-    <ActualAssemblyName>UtilPack.NuGet.MSBuild</ActualAssemblyName>
+    <AssemblyName Condition=" '$(NuGetTargetVersion)' == '' or '$(TargetFramework)' == 'net46' ">NuGetUtils.MSBuild.Exec</AssemblyName>
+    <AssemblyName Condition=" '$(NuGetTargetVersion)' != '' and '$(TargetFramework)' != 'net46' ">NuGetUtils.MSBuild.Exec.NuGetSpecific</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <TreatSpecificWarningsAsErrors />
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>latest</LangVersion>
     <DefineConstants Condition=" '$(TargetFramework)' != 'net46' ">$(DefineConstants);IS_NETSTANDARD</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <NuspecBasePath>$(BaseOutputPath)$(Configuration)</NuspecBasePath>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -24,15 +29,7 @@
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(NuGetTargetVersion)' != '' ">
-    <AssemblyName Condition=" '$(TargetFramework)' != 'net46' ">$(ActualAssemblyName).NuGet.$(NuGetTargetVersion)</AssemblyName>
-    <DefineConstants>$(DefineConstants);NUGET_$(NuGetTargetVersion.Replace('.', ''))</DefineConstants>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition=" '$(NuGetTargetVersion)' == '' or '$(TargetFramework)' == 'net46' ">
-    <AssemblyName>$(ActualAssemblyName)</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -45,20 +42,24 @@
   </ItemDefinitionGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46' ">
-    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
     <PackageReference Include="Microsoft.Build.Framework" Version="14.3" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
-    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
     <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(NuGetTargetVersion)' != '' ">
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="NuGet.Commands" Version="$(NuGetTargetVersion)" />
+  </ItemGroup>
+  
+  <ItemGroup Condition=" '$(NuGetTargetVersion)' != '' ">
+    <ProjectReference Include="..\NuGetUtils.Lib.AssemblyResolving\NuGetUtils.Lib.AssemblyResolving.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup Condition=" '$(NuGetTargetVersion)' == '' ">
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -77,34 +78,45 @@
     <Compile Include="..\NuGetUtils.MSBuild.Exec\NuGetTaskRunnerFactory.cs" />
     <Compile Include="..\NuGetUtils.MSBuild.Exec\NuGetTaskRunnerFactory.NET.cs" />
     <Compile Include="..\NuGetUtils.MSBuild.Exec\NuGetTaskRunnerFactory.NETCore.cs" />
-    <Compile Include="..\NuGetUtils.Lib.AssemblyResolving\NuGetAssemblyResolver.cs" Link="NuGetUtils.Lib.AssemblyResolving.NuGetAssemblyResolver.cs" />
-    <Compile Include="..\NuGetUtils.Lib.Common\NuGetUtility.cs" Link="NuGetUtils.Lib.Common.NuGetUtility.cs" />
-    <Compile Include="..\NuGetUtils.Lib.Restoring\Restoring.cs" Link="NuGetUtils.Lib.Restoring.Restoring.cs" />
-    <Compile Include="..\UtilPack\Asynchrony.cs" Link="UtilPack.Asynchrony.cs" />
-    <Compile Include="..\UtilPack\Miscellaneous.cs" Link="UtilPack.Miscellaneous.cs" />
-    <Compile Include="..\UtilPack\CollectionExtensions.cs" Link="UtilPack.CollectionExtensions.cs" />
-    <Compile Include="..\UtilPack\SequenceEqualityComparer.cs" Link="UtilPack.SequenceEqualityComparer.cs" />
-    <Compile Include="..\UtilPack\Lazies.cs" Link="UtilPack.Lazies.cs" />
-    <Compile Include="..\UtilPack\ArgumentValidator.cs" Link="UtilPack.ArgumentValidator.cs" />
-    <Compile Include="..\UtilPack\Events.cs" Link="UtilPack.Events.cs" />
-    <Compile Include="..\UtilPack\Empty.cs" Link="UtilPack.Empty.cs" />
-    <Compile Include="..\UtilPack\ComparerFromFunctions.cs" Link="UtilPack.ComparerFromFunctions.cs" />
     <Compile Include="..\NuGetUtils.Lib.MSBuild\Logger.cs" Link="NuGetUtils.Lib.MSBuild.Logger.cs" />
-    <Compile Include="..\UtilPack\TreeToEnumerableExtensions.cs" Link="UtilPack.TreeToEnumerableExtensions.cs" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(NuGetTargetVersion)' == '' ">
     <Compile Include="NuGetTaskRunnerFactory.NETCore.Facade.cs" />
   </ItemGroup>
   
+  <Target Name="CopyBuildFolder" BeforeTargets="Build" Condition=" '$(NuGetTargetVersion)' == '' ">
+    <ItemGroup>
+      <CopyableBuildFile Include="$(MSBuildThisFileDirectory)build\*.*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(CopyableBuildFile)"
+      DestinationFolder="$(NuspecBasePath)\build"
+      />
+    <ItemGroup>
+      <CopyableBuildFile Include="$(MSBuildThisFileDirectory)buildMultiTargeting\*.*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(CopyableBuildFile)"
+      DestinationFolder="$(NuspecBasePath)\buildMultiTargeting"
+      />
+  </Target>
+  
   <Target Name="CopyOutputForRelease" AfterTargets="AfterBuild">
-    <!-- When building for different nuget versions, the next build will delete the output (UtilPack.NuGet.MSBuild.NuGet.x.y.z.dll) of the previous build.
+    <!-- When building for different nuget versions, the next build will delete the output DLL of the previous build.
          In release build, we want to save that so that it can be packaged later.
          -->
+    <ItemGroup>
+      <CopyableDLLs Include="$(OutputPath)$(AssemblyName).dll"/>
+      <CopyableDLLs Include="$(OutputPath)$(Product).*.dll"/>
+      <CopyableDLLs Include="$(OutputPath)UtilPack.dll"/>
+    </ItemGroup>
+    
+    <!-- $(OutputPath)$(AssemblyName).dll;$(OutputPath)NuGetUtils.*.dll -->
     <Copy
       Condition=" '$(Configuration)' == 'Release' and '$(TargetFramework)' != 'net46' and '$(NuGetTargetVersion)' != ''"
-      SourceFiles="$(MSBuildThisFileDirectory)$(OutputPath)$(AssemblyName).dll"
-      DestinationFolder="$(MSBuildThisFileDirectory)$(OutputPath)..\NuGetSpecific"
+      SourceFiles="@(CopyableDLLs)"
+      DestinationFolder="$(OutputPath)..\NuGetSpecific\NuGet.$(NuGetVersionPlain)\"
       />
   </Target>
   
@@ -117,12 +129,12 @@
       </Content>
     </ItemGroup>
   </Target>
-
+  
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>2.8.0</VersionPrefix>
+    <VersionPrefix>2.9.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
-    <AssemblyTitle>UtilPack.NuGet.MSBuild</AssemblyTitle>
+    <AssemblyTitle>NuGetUtils.MSBuild.Exec</AssemblyTitle>
     <Description>Provides easy way to execute NuGet-based MSBuild tasks.</Description>
   </PropertyGroup>
 

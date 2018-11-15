@@ -46,8 +46,8 @@ namespace NuGetUtils.MSBuild.Deployment
                this.GetType(),
                this.LockFileCacheDirEnvName,
                this.LockFileCacheDirWithinHomeDir,
-               () => new NuGetMSBuildLogger( "NDE001", "NDE002", this.GetType().FullName, null, this.BuildEngine ),
-               restorer => this.DeployAsync( restorer.Restorer, this._cancelTokenSource.Token, restorer.SDKPackageID, restorer.SDKPackageVersion )
+               restorer => this.DeployAsync( restorer.Restorer, this._cancelTokenSource.Token, restorer.SDKPackageID, restorer.SDKPackageVersion ),
+               () => new NuGetMSBuildLogger( "NDE001", "NDE002", this.GetType().FullName, null, this.BuildEngine )
                ).GetAwaiter().GetResult().EntryPointAssemblyPath;
          }
 

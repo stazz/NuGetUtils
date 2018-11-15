@@ -10,7 +10,6 @@
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <LangVersion>latest</LangVersion>
     <DefineConstants Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">$(DefineConstants);IS_NETSTANDARD</DefineConstants>
-    <DefineConstants>$(DefineConstants);NUGET_480</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -19,6 +18,7 @@
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
+     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemDefinitionGroup>

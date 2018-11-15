@@ -11,11 +11,7 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);NUGET_$(NuGetTargetVersion.Replace('.', ''))</DefineConstants>
-  </PropertyGroup>
-  
+ 
   <ItemGroup>
     <ProjectReference Include="..\NuGetUtils.Lib.Common\NuGetUtils.Lib.Common.csproj" />
   </ItemGroup>
@@ -37,10 +33,4 @@
     <PackageTags>utility nuget extensions restore</PackageTags>
     <Title>NuGet Restore Helper</Title>
   </PropertyGroup>
-
-   <PropertyGroup>
-      <Product>NuGetUtils</Product>
-      <AssemblyOriginatorKeyFile>$(MSBuildThisProjectDirectory)..\..\Keys\NuGetUtils.sha1.snk</AssemblyOriginatorKeyFile>
-   </PropertyGroup>
-
 </Project>
