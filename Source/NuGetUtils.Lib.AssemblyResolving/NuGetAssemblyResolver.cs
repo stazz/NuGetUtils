@@ -1309,6 +1309,32 @@ namespace NuGetUtils.Lib.AssemblyResolving
       public String PackageDirectory { get; }
       public String[] Assemblies { get; }
    }
+
+   /// <summary>
+   /// This class contains extension methods for types defined in other assemblies.
+   /// </summary>
+   public static class NuGetExtensions
+   {
+      /// <summary>
+      /// This is helper method to log information about failing to resolve assembly.
+      /// </summary>
+      /// <param name="restorer">This <see cref="BoundRestoreCommandUser"/>.</param>
+      /// <param name="packageID">The package ID of the package.</param>
+      /// <param name="possiblePaths">The possible paths for the assembly.</param>
+      /// <param name="pathHint">The hint for the assembly path.</param>
+      /// <param name="seenAssemblyPath">The assembly path that is seen.</param>
+      /// <exception cref="NullReferenceException">If this <see cref="BoundRestoreCommandUser"/> is <c>null</c>.</exception>
+      public static void LogAssemblyPathResolveError(
+         this BoundRestoreCommandUser restorer,
+         String packageID,
+         String[] possiblePaths,
+         String pathHint,
+         String seenAssemblyPath
+         )
+      {
+         restorer.NuGetLogger.LogError( $"Failed to resolve assemblies for \"{packageID}\"{( String.IsNullOrEmpty( seenAssemblyPath ) ? "" : ( " from \"" + seenAssemblyPath + "\"" ) )}, considered {String.Join( ";", possiblePaths.Select( pp => "\"" + pp + "\"" ) )}, with path hint of \"{pathHint}\"." );
+      }
+   }
 }
 
 /// <summary>
@@ -1486,13 +1512,6 @@ public static partial class E_NuGetUtils
    {
       ArgumentValidator.ValidateNotNullReference( resolver );
       return ( typeString ) => resolver.TryLoadTypeFromPreviouslyLoadedAssemblies( typeString );
-   }
-
-
-
-   internal static void LogAssemblyPathResolveError( this BoundRestoreCommandUser restorer, String packageID, String[] possiblePaths, String pathHint, String seenAssemblyPath )
-   {
-      restorer.NuGetLogger.LogError( $"Failed to resolve assemblies for \"{packageID}\"{( String.IsNullOrEmpty( seenAssemblyPath ) ? "" : ( " from \"" + seenAssemblyPath + "\"" ) )}, considered {String.Join( ";", possiblePaths.Select( pp => "\"" + pp + "\"" ) )}, with path hint of \"{pathHint}\"." );
    }
 
    internal static IEnumerable<String> GetSimpleAssemblyNames(

@@ -377,12 +377,13 @@ namespace NuGetUtils.MSBuild.Exec
 
                         var taskAssemblies = nugetResolver.ExtractAssemblyPaths(
                            restoreResult,
-                           getFiles
+                           ( packageFolder, filePaths ) => filePaths.ToArray(),
+                           fileGetter: getFiles
                            )[packageID];
                         var assemblyPathHint = taskBodyElement.ElementAnyNS( ASSEMBLY_PATH )?.Value;
                         var assemblyPath = NuGetUtility.GetAssemblyPathFromNuGetAssemblies(
                            packageID,
-                           taskAssemblies.Assemblies,
+                           taskAssemblies,
                            assemblyPathHint
                            );
                         if ( !String.IsNullOrEmpty( assemblyPath ) )
@@ -439,7 +440,7 @@ namespace NuGetUtils.MSBuild.Exec
                         }
                         else
                         {
-                           nugetResolver.LogAssemblyPathResolveError( packageID, taskAssemblies.Assemblies, assemblyPathHint, assemblyPath );
+                           nugetResolver.LogAssemblyPathResolveError( packageID, taskAssemblies, assemblyPathHint, assemblyPath );
                            taskFactoryLoggingHost.LogErrorEvent(
                               new BuildErrorEventArgs(
                                  "Task factory",
