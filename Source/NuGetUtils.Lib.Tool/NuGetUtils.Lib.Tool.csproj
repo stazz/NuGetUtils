@@ -14,10 +14,10 @@
 
    <ItemGroup>
       <ProjectReference Include="..\NuGetUtils.Lib.Restore\NuGetUtils.Lib.Restore.csproj" />
-      <ProjectReference Include="..\UtilPack.Documentation\UtilPack.Documentation.csproj" />
    </ItemGroup>
 
    <ItemGroup>
+      <PackageReference Include="UtilPack.Documentation" Version="1.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.1" />
       <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.1.1" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
