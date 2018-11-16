@@ -225,7 +225,7 @@ namespace NuGetUtils.MSBuild.Push
                var retryTimeout = this.RetryTimeoutForDirectoryDeletionFail;
                if ( retryTimeout > 0 )
                {
-                  await Task.Delay( retryTimeout );
+                  await Task.Delay( retryTimeout, this._cancelSource.Token );
 
                   try
                   {
