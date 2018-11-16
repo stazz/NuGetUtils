@@ -156,6 +156,9 @@ namespace NuGetUtils.Lib.Restore
          SourceCacheContext sourceCacheContext = null,
 #if !NUGET_430
          TLocalNuspecCache nuspecCache = null,
+#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
+         ClientPolicyContext clientPolicyContext = null,
+#endif
 #endif
          Boolean leaveSourceCacheOpen = false,
          String lockFileCacheDir = null,
@@ -242,7 +245,7 @@ namespace NuGetUtils.Lib.Restore
          this._allLockFiles = new ConcurrentDictionary<ImmutableSortedSet<String>, ImmutableDictionary<ImmutableArray<NuGetVersion>, String>>();
          this._lockFileFormat = new LockFileFormat();
 #if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
-         this._clientPolicyContext = ClientPolicyContext.GetClientPolicy( nugetSettings, nugetLogger );
+         this._clientPolicyContext = clientPolicyContext ?? ClientPolicyContext.GetClientPolicy( nugetSettings, nugetLogger );
 #endif
       }
 
