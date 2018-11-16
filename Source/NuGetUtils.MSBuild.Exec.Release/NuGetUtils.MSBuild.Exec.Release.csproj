@@ -110,6 +110,7 @@
       <CopyableDLLs Include="$(OutputPath)$(AssemblyName).dll"/>
       <CopyableDLLs Include="$(OutputPath)$(Product).*.dll"/>
       <CopyableDLLs Include="$(OutputPath)UtilPack.dll"/>
+      <CopyableDLLs Include="$(OutputPath)System.Collections.Immutable.dll"/>
     </ItemGroup>
     
     <!-- $(OutputPath)$(AssemblyName).dll;$(OutputPath)NuGetUtils.*.dll -->
