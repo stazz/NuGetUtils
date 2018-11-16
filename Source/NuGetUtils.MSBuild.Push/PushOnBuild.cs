@@ -62,11 +62,11 @@ namespace NuGetUtils.MSBuild.Push
             var psp = new PackageSourceProvider( settings );
             var packagePath = Path.GetFullPath( this.PackageFilePath );
 
-            var identity = new Lazy<PackageIdentity>( () =>
+            var identity = new AsyncLazy<PackageIdentity>( async () =>
             {
                using ( var reader = new PackageArchiveReader( packagePath ) )
                {
-                  return reader.GetIdentity();
+                  return await reader.GetIdentityAsync( this._cancelSource.Token );
                }
             } );
             var allRepositories = new Lazy<NuGetv3LocalRepository[]>( () =>
@@ -110,7 +110,7 @@ namespace NuGetUtils.MSBuild.Push
          ISettings settings,
          String packagePath,
          PackageSourceProvider psp,
-         Lazy<PackageIdentity> identity,
+         AsyncLazy<PackageIdentity> identity,
          Lazy<NuGetv3LocalRepository[]> allRepositories,
          NuGet.Common.ILogger logger,
          ITaskItem sourceItem
@@ -128,7 +128,7 @@ namespace NuGetUtils.MSBuild.Push
          var isLocal = IsLocalFeed( psp, source, out var localPath );
          if ( isLocal && !skipOverwrite )
          {
-            this.DeleteDir( OfflineFeedUtility.GetPackageDirectory( identity.Value, localPath ) );
+            this.DeleteDir( OfflineFeedUtility.GetPackageDirectory( await identity, localPath ) );
          }
 
          if ( isLocal && !skipOfflineFeedOptimization )
@@ -187,9 +187,10 @@ namespace NuGetUtils.MSBuild.Push
 
          if ( !skipClearRepositories )
          {
+            var id = await identity;
             foreach ( var repo in allRepositories.Value )
             {
-               this.DeleteDir( repo.PathResolver.GetInstallPath( identity.Value.Id, identity.Value.Version ) );
+               this.DeleteDir( repo.PathResolver.GetInstallPath( id.Id, id.Version ) );
             }
          }
       }
