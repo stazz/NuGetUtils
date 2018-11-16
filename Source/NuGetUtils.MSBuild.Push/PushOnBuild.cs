@@ -20,6 +20,7 @@ using NuGet.Commands;
 using NuGet.Configuration;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
+using NuGet.Packaging.Signing;
 using NuGet.Protocol.Core.Types;
 using NuGet.Repositories;
 using NuGetUtils.Lib.Common;
@@ -134,7 +135,20 @@ namespace NuGetUtils.MSBuild.Push
          {
             // The default v2 repo detection algorithm for PushRunner (PackageUpdateResource.IsV2LocalRepository) always returns true for empty folders, so let's use the OfflineFeedUtility here right away (which will assume v3 repository)
             await OfflineFeedUtility.AddPackageToSource(
-               new OfflineFeedAddContext( packagePath, localPath, logger, true, false, false, true ),
+               new OfflineFeedAddContext(
+                  packagePath,
+                  localPath,
+                  logger,
+                  true,
+                  false,
+                  false,
+                  new PackageExtractionContext(
+                     PackageSaveMode.Defaultv3,
+                     XmlDocFileSaveMode.None,
+                     ClientPolicyContext.GetClientPolicy( settings, logger ),
+                     logger
+                     )
+                  ),
                this._cancelSource.Token
                );
          }
