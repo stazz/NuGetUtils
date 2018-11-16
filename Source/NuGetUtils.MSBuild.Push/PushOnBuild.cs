@@ -71,10 +71,10 @@ namespace NuGetUtils.MSBuild.Push
             } );
             var allRepositories = new Lazy<NuGetv3LocalRepository[]>( () =>
                SettingsUtility.GetGlobalPackagesFolder( settings )
-               .Singleton()
-               .Concat( SettingsUtility.GetFallbackPackageFolders( settings ) )
-               .Select( repoPath => new NuGetv3LocalRepository( repoPath ) )
-               .ToArray()
+                  .Singleton()
+                  .Concat( SettingsUtility.GetFallbackPackageFolders( settings ) )
+                  .Select( repoPath => new NuGetv3LocalRepository( repoPath ) )
+                  .ToArray()
                );
             var logger = new NuGetMSBuildLogger(
                "NP0001",
@@ -128,7 +128,7 @@ namespace NuGetUtils.MSBuild.Push
          var isLocal = IsLocalFeed( psp, source, out var localPath );
          if ( isLocal && !skipOverwrite )
          {
-            this.DeleteDir( OfflineFeedUtility.GetPackageDirectory( await identity, localPath ) );
+            await this.DeleteDirAsync( OfflineFeedUtility.GetPackageDirectory( await identity, localPath ) );
          }
 
          if ( isLocal && !skipOfflineFeedOptimization )
@@ -190,7 +190,7 @@ namespace NuGetUtils.MSBuild.Push
             var id = await identity;
             foreach ( var repo in allRepositories.Value )
             {
-               this.DeleteDir( repo.PathResolver.GetInstallPath( id.Id, id.Version ) );
+               await this.DeleteDirAsync( repo.PathResolver.GetInstallPath( id.Id, id.Version ) );
             }
          }
       }
@@ -204,30 +204,33 @@ namespace NuGetUtils.MSBuild.Push
 
       public Int32 RetryTimeoutForDirectoryDeletionFail { get; set; } = 500;
 
-      private void DeleteDir( String dir )
+      private async Task DeleteDirAsync( String dir )
       {
          if ( Directory.Exists( dir ) )
          {
             // There are problems with using Directory.Delete( dir, true ); while other process has file watchers on it
+            Exception error = null;
             try
             {
                Directory.Delete( dir, true );
             }
             catch ( Exception exc )
             {
+               error = exc;
+
+            }
+
+            if ( error != null )
+            {
                var retryTimeout = this.RetryTimeoutForDirectoryDeletionFail;
-               var success = false;
                if ( retryTimeout > 0 )
                {
-                  using ( var mres = new System.Threading.ManualResetEventSlim( false, 0 ) )
-                  {
-                     mres.Wait( retryTimeout );
-                  }
+                  await Task.Delay( retryTimeout );
 
                   try
                   {
                      Directory.Delete( dir, true );
-                     success = true;
+                     error = null;
                   }
                   catch
                   {
@@ -236,9 +239,9 @@ namespace NuGetUtils.MSBuild.Push
                   }
                }
 
-               if ( !success )
+               if ( error != null )
                {
-                  this.Log.LogWarning( $"Failed to delete directory {dir}: {exc.Message}." );
+                  this.Log.LogWarning( $"Failed to delete directory {dir}: {error.Message}." );
                }
             }
          }
