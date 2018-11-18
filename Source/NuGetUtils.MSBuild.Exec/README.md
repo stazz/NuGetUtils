@@ -95,7 +95,7 @@ The following information is optional:
 * `NoDedicatedAppDomain`: This boolean controls how AppDomains are handled in .NET Desktop version. Setting this to `true` will load the task in the same AppDomain as task factory is, otherwise the dedicated AppDomain is created for the task. This defaults to `true` only when Mono framework is detected at runtime, otherwise the default value is `false`.
 
 ### Example
-Old example of explicitly using `NuGetUtils.MSBuild.Exec` in [here](https://github.com/stazz/UtilPack/tree/develop/Source/UtilPack.NuGet.MSBuild.TestProject).
+Old example of explicitly using this project in [here](https://github.com/stazz/UtilPack/tree/develop/Source/UtilPack.NuGet.MSBuild.TestProject).
 
 # Developing MSBuild Tasks Executable By NuGetUtils.MSBuild.Exec Task Factory
 ## Overview
