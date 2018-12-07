@@ -3,33 +3,33 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2050
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Common", "NuGetUtils.Lib.Common\NuGetUtils.Lib.Common.csproj", "{DF62AC6C-78B6-4366-92B3-7442807FAC62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Common", "Code\NuGetUtils.Lib.Common\NuGetUtils.Lib.Common.csproj", "{DF62AC6C-78B6-4366-92B3-7442807FAC62}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Restore", "NuGetUtils.Lib.Restore\NuGetUtils.Lib.Restore.csproj", "{C6721169-49E2-4D30-BB1F-E9E90588E17D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Restore", "Code\NuGetUtils.Lib.Restore\NuGetUtils.Lib.Restore.csproj", "{C6721169-49E2-4D30-BB1F-E9E90588E17D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.AssemblyResolving", "NuGetUtils.Lib.AssemblyResolving\NuGetUtils.Lib.AssemblyResolving.csproj", "{1492B02B-A63D-4970-A9F4-61C4294B7001}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.AssemblyResolving", "Code\NuGetUtils.Lib.AssemblyResolving\NuGetUtils.Lib.AssemblyResolving.csproj", "{1492B02B-A63D-4970-A9F4-61C4294B7001}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Deployment", "NuGetUtils.Lib.Deployment\NuGetUtils.Lib.Deployment.csproj", "{510B7F6F-7910-411B-B6DC-1099FD112ABE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Deployment", "Code\NuGetUtils.Lib.Deployment\NuGetUtils.Lib.Deployment.csproj", "{510B7F6F-7910-411B-B6DC-1099FD112ABE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.EntryPoint", "NuGetUtils.Lib.EntryPoint\NuGetUtils.Lib.EntryPoint.csproj", "{1804919A-7110-46A1-9179-D5D229491460}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.EntryPoint", "Code\NuGetUtils.Lib.EntryPoint\NuGetUtils.Lib.EntryPoint.csproj", "{1804919A-7110-46A1-9179-D5D229491460}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Exec", "NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj", "{DB07C26E-4E9C-4AA0-8689-FA1B76070A27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Exec", "Code\NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj", "{DB07C26E-4E9C-4AA0-8689-FA1B76070A27}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.MSBuild", "NuGetUtils.Lib.MSBuild\NuGetUtils.Lib.MSBuild.csproj", "{8A890835-D309-4074-8534-BCC2B3483CC0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.MSBuild", "Code\NuGetUtils.Lib.MSBuild\NuGetUtils.Lib.MSBuild.csproj", "{8A890835-D309-4074-8534-BCC2B3483CC0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Tool", "NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj", "{A6097A06-8049-4085-B611-A688B5B702DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Tool", "Code\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj", "{A6097A06-8049-4085-B611-A688B5B702DC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Deployment", "NuGetUtils.MSBuild.Deployment\NuGetUtils.MSBuild.Deployment.csproj", "{581CD7F4-2034-4AE3-98B8-74C463FD7282}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Deployment", "Code\NuGetUtils.MSBuild.Deployment\NuGetUtils.MSBuild.Deployment.csproj", "{581CD7F4-2034-4AE3-98B8-74C463FD7282}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Push", "NuGetUtils.MSBuild.Push\NuGetUtils.MSBuild.Push.csproj", "{41EC2B81-5FE9-4079-AC57-3E6EC90576C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Push", "Code\NuGetUtils.MSBuild.Push\NuGetUtils.MSBuild.Push.csproj", "{41EC2B81-5FE9-4079-AC57-3E6EC90576C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Tool.Deploy", "NuGetUtils.Tool.Deploy\NuGetUtils.Tool.Deploy.csproj", "{1D470AFA-7DBD-4748-AEEB-A370FA0C1614}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Tool.Deploy", "Code\NuGetUtils.Tool.Deploy\NuGetUtils.Tool.Deploy.csproj", "{1D470AFA-7DBD-4748-AEEB-A370FA0C1614}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Tool.Exec", "NuGetUtils.Tool.Exec\NuGetUtils.Tool.Exec.csproj", "{A46BCF27-60AC-46E4-AB8D-1CB8EE6A2529}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Tool.Exec", "Code\NuGetUtils.Tool.Exec\NuGetUtils.Tool.Exec.csproj", "{A46BCF27-60AC-46E4-AB8D-1CB8EE6A2529}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Tool.Restore", "NuGetUtils.Tool.Restore\NuGetUtils.Tool.Restore.csproj", "{E6F04EA6-017B-45E2-A795-B3CCBAF6F24B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Tool.Restore", "Code\NuGetUtils.Tool.Restore\NuGetUtils.Tool.Restore.csproj", "{E6F04EA6-017B-45E2-A795-B3CCBAF6F24B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec", "NuGetUtils.MSBuild.Exec\NuGetUtils.MSBuild.Exec.csproj", "{D54D0518-E800-43A5-9F86-2E69D1F6809F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec", "Code\NuGetUtils.MSBuild.Exec\NuGetUtils.MSBuild.Exec.csproj", "{D54D0518-E800-43A5-9F86-2E69D1F6809F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

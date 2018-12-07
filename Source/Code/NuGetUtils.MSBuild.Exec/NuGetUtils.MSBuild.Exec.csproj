@@ -62,10 +62,8 @@
     <Compile Include="NuGetTaskRunnerFactory.cs" />
     <Compile Include="NuGetTaskRunnerFactory.NET.cs" />
     <Compile Include="NuGetTaskRunnerFactory.NETCore.cs" />
-    <!--<Compile Include="..\NuGetUtils.Lib.AssemblyResolving\NuGetAssemblyResolver.cs" Link="NuGetUtils.Lib.AssemblyResolving.NuGetAssemblyResolver.cs" />
-    <Compile Include="..\NuGetUtils.Lib.Common\NuGetUtility.cs" Link="NuGetUtils.Lib.Common.NuGetUtility.cs" />
-    <Compile Include="..\NuGetUtils.Lib.Restore\Restoring.cs" Link="NuGetUtils.Lib.Restore.Restoring.cs" /> -->
     <Compile Include="..\NuGetUtils.Lib.MSBuild\Logger.cs" Link="NuGetUtils.Lib.MSBuild.Logger.cs" />
+    <Compile Include="..\NuGetUtils.Lib.Tool\Consts.cs" Link="NuGetUtils.Lib.Tool.Consts.cs" />
   </ItemGroup>
   
 

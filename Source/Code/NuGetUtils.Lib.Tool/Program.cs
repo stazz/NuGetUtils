@@ -275,21 +275,7 @@ namespace NuGetUtils.Lib.Tool
 
    }
 
-   /// <summary>
-   /// This is type parameterless class to hold some string constants used by <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}"/>.
-   /// </summary>
-   public static class NuGetRestoringProgramConsts
-   {
-      /// <summary>
-      /// This is the default environment variable name that is used when trying to deduce lock file cache directory.
-      /// </summary>
-      public const String LOCK_FILE_CACHE_DIR_ENV_NAME = "NUGET_UTILS_CACHE_DIR";
 
-      /// <summary>
-      /// This is the default directory name within home directory which will hold the lock file cache directory.
-      /// </summary>
-      public const String LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR = ".nuget-utils-cache";
-   }
 
    /// <summary>
    /// This class further specializes the <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}"/> for programs that use <see cref="BoundRestoreCommandUser"/> in their task.
