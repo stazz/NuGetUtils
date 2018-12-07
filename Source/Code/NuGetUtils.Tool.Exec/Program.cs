@@ -51,10 +51,10 @@ namespace NuGetUtils.Tool.Exec
             CommandLineGroupInfo = new DefaultDocumentationGroupInfo()
             {
                GroupName = "executable-options",
-               AdditionalGroups = new[] {new GroupContainer(true, new ParameterGroupOrFixedParameter[] {
+               AdditionalGroups = new[] { new GroupContainer(true, new ParameterGroupOrFixedParameter[] {
                      new FixedParameter(false, EXEC_ARGS_SEPARATOR),
                      new NamedParameterGroup(true, "executable-arguments", description: "The arguments for the entrypoint within NuGet-packaged assembly.")
-                  } )},
+                  } ) },
                Purpose = "Execute a method from NuGet-packaged assembly, restoring the package if needed, parametrized by command-line parameters."
             },
             ConfigurationFileGroupInfo = new DefaultDocumentationGroupInfo()

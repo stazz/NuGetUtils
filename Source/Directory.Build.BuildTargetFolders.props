@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <BuildCommonBaseDir>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildThisFileDirectory)', 'BuildMarker.txt'))</BuildCommonBaseDir>
+    <BuildCommonBaseDir Condition=" '$(BuildCommonBaseDir)' == '' ">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)/../../'))</BuildCommonBaseDir>
+    <BuildCommonOutputDir Condition=" '$(BuildCommonOutputDir)' == '' ">$(BuildCommonBaseDir)\BuildTarget\</BuildCommonOutputDir>
+    
+    <BaseIntermediateOutputPath>$(BuildCommonOutputDir)\$(Configuration)\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(BuildCommonOutputDir)\$(Configuration)\bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)</IntermediateOutputPath>
+    <OutputPath>$(BaseOutputPath)</OutputPath>
+    
+    <PackageOutputPath>$(BuildCommonOutputDir)\$(Configuration)\bin\</PackageOutputPath>
+    <RestoreOutputPath>$(BaseIntermediateOutputPath)</RestoreOutputPath>
+
+    <CIPropsFilePath Condition=" '$(IsCIBuild)' == 'true' ">$([MSBuild]::GetPathOfFileAbove('CISupport.props'))</CIPropsFilePath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsCIBuild)' == 'true' ">
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/../../secrets/assembly_key.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+</Project>
