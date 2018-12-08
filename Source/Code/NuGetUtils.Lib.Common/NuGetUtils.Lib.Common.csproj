@@ -9,13 +9,18 @@
     <TreatSpecificWarningsAsErrors />
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <LangVersion>latest</LangVersion>
-    <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="NuGet.Commands" Version="$(NuGetTargetVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="UtilPack" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Threading.Tasks" />
+    <Reference Include="System.Collections" />
   </ItemGroup>
 
   <!-- Assembly information stuff -->
@@ -35,5 +40,7 @@
     <PackageTags>utility nuget extensions restore</PackageTags>
     <Title>NuGet Restore Helper</Title>
   </PropertyGroup>
+
+  <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
 </Project>

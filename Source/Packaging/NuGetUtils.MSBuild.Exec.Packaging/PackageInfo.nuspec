@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>NuGetUtils.MSBuild.Exec</id>
-    <version>1.0.0</version>
+    <version>$PackageVersion$</version>
     <title>Task Factory for Executing NuGet-Package -Based MSBuild Tasks</title>
     <authors>Stanislav Muhametsin</authors>
     <owners>Stanislav Muhametsin</owners>
@@ -11,9 +11,9 @@
     <repository url="https://github.com/stazz/NuGetUtils/tree/develop/Source/NuGetUtils.MSBuild.Exec" type="git" />
     <projectUrl>https://github.com/stazz/NuGetUtils</projectUrl>
     <description>Provides easy way to execute NuGet-based MSBuild tasks.</description>
-    <releaseNotes>The dedicated AppDomain is no longer used if the value for option "NoDedicatedAppDomain" is true. This value is only used in .NET Desktop version, and defaults to true when Mono framework is detected. Otherwise it is false.</releaseNotes>
+    <releaseNotes>$PackageReleaseNotes$</releaseNotes>
     <copyright>Stanislav Muhametsin</copyright>
-    <tags>utility nuget extensions msbuild task package resolve</tags>
+    <tags>$PackageTags$</tags>
     <developmentDependency>true</developmentDependency>
     <dependencies/>
   </metadata>

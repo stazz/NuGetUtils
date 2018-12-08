@@ -8,13 +8,18 @@
       <TreatSpecificWarningsAsErrors />
       <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
       <LangVersion>latest</LangVersion>
-      <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
    </PropertyGroup>
 
    <ItemGroup>
       <ProjectReference Include="..\NuGetUtils.Lib.AssemblyResolving\NuGetUtils.Lib.AssemblyResolving.csproj" />
       <ProjectReference Include="..\NuGetUtils.Lib.EntryPoint\NuGetUtils.Lib.EntryPoint.csproj" />
    </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Threading.Tasks" />
+    <Reference Include="System.Collections" />
+  </ItemGroup>
 
    <!-- Assembly information stuff -->
    <PropertyGroup>
@@ -34,4 +39,5 @@
       <Title></Title>
    </PropertyGroup>
 
+   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 </Project>

@@ -8,7 +8,6 @@
       <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
       <TreatSpecificWarningsAsErrors />
       <LangVersion>latest</LangVersion>
-      <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
       <NuGetExecToolName>NuGetUtils.Tool.Exec</NuGetExecToolName>
    </PropertyGroup>
 
@@ -29,5 +28,6 @@
       <Title>Entry Point Information For $(NuGetExecToolName).</Title>
       <Description>This library contains attribute which is used by $(NuGetExecToolName) tool when it executes a method within a NuGet package. This attribute can be used to modify the behaviour of $(NuGetExecToolName) and how it detects the method to be executed.</Description>
    </PropertyGroup>
-   
+
+   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 </Project>

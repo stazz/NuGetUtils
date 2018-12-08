@@ -106,12 +106,12 @@ namespace NuGetUtils.Lib.Restore
       /// <summary>
       /// This is the default name of the environment variable which holds the default value for directory where the results of <see cref="RestoreIfNeeded"/> are stored for faster caching.
       /// </summary>
-      public const String DEFAULT_LOCK_FILE_CACHE_DIR_ENV_NAME = "LOCK_FILE_CACHE_DIR";
+      public const String DEFAULT_LOCK_FILE_CACHE_DIR_ENV_NAME = "NUGET_UTILS_CACHE_DIR";
 
       /// <summary>
       /// This is the default name of the directory within user's home directory which will serve as lock file cache directory.
       /// </summary>
-      public const String DEFAULT_LOCK_FILE_CACHE_SUBDIR = ".nuget-lock-files";
+      public const String DEFAULT_LOCK_FILE_CACHE_SUBDIR = ".nuget-utils-cache";
 
       /// <summary>
       /// This is the default callback which will simply combine given home directory with <see cref="DEFAULT_LOCK_FILE_CACHE_SUBDIR"/>. It is used to deduce the default lock file cache directory when none is given via constructor parameter or environment variable.
@@ -141,6 +141,7 @@ namespace NuGetUtils.Lib.Restore
       /// <param name="nugetLogger">The logger to use in restore command.</param>
       /// <param name="sourceCacheContext">The optional <see cref="SourceCacheContext"/> to use.</param>
       /// <param name="nuspecCache">The optional <see cref="TLocalNuspecCache"/> to use.</param>
+      /// <param name="clientPolicyContext">The optional <see cref="ClientPolicyContext"/> to use.</param>
       /// <param name="leaveSourceCacheOpen">Whether to leave the <paramref name="sourceCacheContext"/> open when disposing this <see cref="BoundRestoreCommandUser"/>.</param>
       /// <param name="lockFileCacheDir">The directory where to store serialized lock files returned by <see cref="RestoreIfNeeded"/>. If <c>null</c> or empty, then <paramref name="lockFileCacheEnvironmentVariableName"/> will be used. Set <paramref name="disableLockFileCacheDir"/> to true to disable caching lock files to file system.</param>
       /// <param name="lockFileCacheEnvironmentVariableName">The name of the environment variable containing the value for lock file cache directory. If <c>null</c> or empty, then environment variable reading will be skipped. If the environment variable itself is <c>null</c> or empty, then the user's home directory in conjunction with <paramref name="getDefaultLockFileCacheDir"/> will be used to deduce lock file cache directory. Set <paramref name="disableLockFileCacheDir"/> to true to disable caching lock files to file system.</param>

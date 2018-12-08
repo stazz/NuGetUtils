@@ -35,4 +35,6 @@
       <Title>NuGet Package Restorer</Title>
    </PropertyGroup>
 
+   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
+
 </Project>

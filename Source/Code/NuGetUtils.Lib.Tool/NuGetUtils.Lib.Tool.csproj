@@ -9,7 +9,6 @@
       <TreatSpecificWarningsAsErrors />
       <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
       <LangVersion>latest</LangVersion>
-      <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
    </PropertyGroup>
 
    <ItemGroup>
@@ -41,4 +40,5 @@
       <Title></Title>
    </PropertyGroup>
 
+   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 </Project>
