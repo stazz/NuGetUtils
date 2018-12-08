@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
-namespace NuGetUtils.Common.Tests
+namespace Tests.NuGetUtils.Lib.Common
 {
    [TestClass]
    public class AutomaticFrameworkDetectionTests
