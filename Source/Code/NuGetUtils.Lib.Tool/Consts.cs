@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using NuGetUtils.Lib.Restore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -29,11 +30,11 @@ namespace NuGetUtils.Lib.Tool
       /// <summary>
       /// This is the default environment variable name that is used when trying to deduce lock file cache directory.
       /// </summary>
-      public const String LOCK_FILE_CACHE_DIR_ENV_NAME = "NUGET_UTILS_CACHE_DIR";
+      public const String LOCK_FILE_CACHE_DIR_ENV_NAME = BoundRestoreCommandUser.DEFAULT_LOCK_FILE_CACHE_DIR_ENV_NAME;
 
       /// <summary>
       /// This is the default directory name within home directory which will hold the lock file cache directory.
       /// </summary>
-      public const String LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR = ".nuget-utils-cache";
+      public const String LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR = BoundRestoreCommandUser.DEFAULT_LOCK_FILE_CACHE_SUBDIR;
    }
 }

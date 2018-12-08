@@ -27,7 +27,6 @@ using NuGetUtils.Lib.AssemblyResolving;
 using NuGetUtils.Lib.Common;
 using NuGetUtils.Lib.MSBuild;
 using NuGetUtils.Lib.Restore;
-using NuGetUtils.Lib.Tool;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -287,8 +286,8 @@ namespace NuGetUtils.MSBuild.Exec
                nugetLogger: nugetLogger,
                runtimeIdentifier: runtimeIdentifier,
                runtimeGraph: runtimeGraph,
-               lockFileCacheEnvironmentVariableName: NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME,
-               getDefaultLockFileCacheDir: homeDir => Path.Combine( homeDir, NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR )
+               lockFileCacheEnvironmentVariableName: BoundRestoreCommandUser.DEFAULT_LOCK_FILE_CACHE_DIR_ENV_NAME,
+               getDefaultLockFileCacheDir: homeDir => Path.Combine( homeDir, BoundRestoreCommandUser.DEFAULT_LOCK_FILE_CACHE_SUBDIR )
                );
             var cachePolicy = ( taskBodyElement.ElementAnyNS( CACHE_USAGE )?.Value ).DefaultIfNullOrEmpty( CACHE_USAGE_ENABLED );
             if ( String.Equals( cachePolicy, CACHE_USAGE_DISABLED, StringComparison.OrdinalIgnoreCase ) )

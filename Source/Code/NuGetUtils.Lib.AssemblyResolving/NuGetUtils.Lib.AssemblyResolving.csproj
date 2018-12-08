@@ -8,7 +8,6 @@
     <TreatSpecificWarningsAsErrors />
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <LangVersion>latest</LangVersion>
-    <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
@@ -17,6 +16,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NuGetUtils.Lib.Restore\NuGetUtils.Lib.Restore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Threading.Tasks" />
+    <Reference Include="System.Collections" />
   </ItemGroup>
 
   <!-- Assembly information stuff -->
@@ -36,5 +41,7 @@
     <PackageTags>utility nuget extensions dynamically load assembly</PackageTags>
     <Title>NuGet Assembly Resolving Helper</Title>
   </PropertyGroup>
+
+  <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
 </Project>

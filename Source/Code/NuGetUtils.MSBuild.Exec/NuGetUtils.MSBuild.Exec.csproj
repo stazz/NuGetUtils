@@ -46,25 +46,15 @@
     <ProjectReference Include="..\NuGetUtils.Lib.AssemblyResolving\NuGetUtils.Lib.AssemblyResolving.csproj" />
   </ItemGroup>
 
-   <ItemGroup>
-    <Compile Remove="*.cs" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Threading.Tasks" />
+    <Reference Include="System.Collections" />
   </ItemGroup>
-  
+ 
   <ItemGroup>
-    <None Include="build\**">
-      <Pack>true</Pack>
-      <PackagePath>build\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
-    </None>
-    <None Include="buildMultiTargeting\**">
-      <Pack>true</Pack>
-      <PackagePath>buildMultiTargeting\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
-    </None>
-    <Compile Include="NuGetTaskRunnerFactory.cs" />
-    <Compile Include="NuGetTaskRunnerFactory.NET.cs" />
-    <Compile Include="NuGetTaskRunnerFactory.NETCore.cs" />
     <Compile Include="..\NuGetUtils.Lib.MSBuild\Logger.cs" Link="NuGetUtils.Lib.MSBuild.Logger.cs" />
-    <Compile Include="..\NuGetUtils.Lib.Tool\Consts.cs" Link="NuGetUtils.Lib.Tool.Consts.cs" />
   </ItemGroup>
   
-
+  <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 </Project>
