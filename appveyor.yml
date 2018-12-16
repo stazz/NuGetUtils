@@ -11,6 +11,7 @@ environment:
   RELATIVE_NUGET_PACKAGE_DIR: 'nuget-package-dir/'
   RELATIVE_CS_OUTPUT: 'output/'
   CI_FOLDER: 'CIPipeline'
+  DEPLOYABLE_BRANCH: 'HEAD'
   DOTNET_VERSION: '2.1'
   DEPLOY_NUGET_SOURCE: 'https://api.nuget.org/v3/index.json'
   DEPLOY_NUGET_NO_SYMBOLS: true

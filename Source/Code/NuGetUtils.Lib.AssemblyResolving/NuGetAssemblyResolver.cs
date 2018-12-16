@@ -343,7 +343,7 @@ namespace NuGetUtils.Lib.AssemblyResolving
       /// <param name="appDomainSetup">The <see cref="AppDomainSetup"/> to use when creating new <see cref="AppDomain"/>. Specify <c>null</c> if creating <see cref="NuGetAssemblyResolver"/> in this app domain.</param>
       /// <param name="createdLoader">This parameter will contain the newly created <see cref="AppDomain"/>, or <see cref="AppDomain.CurrentDomain"/> if <paramref name="appDomainSetup"/> is not specified.</param>
       /// <param name="overrideLocation">The optional callback to override location of assembly to be loaded. If it is called, then <paramref name="pathProcessor"/> will not be used.</param>
-      /// <param name="defaultGetFiles">The optional callback to give to <see cref="M:E_UtilPack.ExtractAssemblyPaths{TResult}(BoundRestoreCommandUser, LockFile, Func{string, IEnumerable{string}, TResult}, GetFileItemsDelegate)"/> method.</param>
+      /// <param name="defaultGetFiles">The optional callback to give to <see cref="M:E_NuGetUtils.ExtractAssemblyPaths{TResult}(BoundRestoreCommandUser, LockFile, Func{string, IEnumerable{string}, TResult}, GetFileItemsDelegate)"/> method.</param>
       /// <param name="pathProcessor">The optional callback to process assembly path just before it is loaded. It can e.g. copy assembly to some temp folder in order to avoid locking assembly in package repository.</param>
       /// <returns>A new instance of <see cref="NuGetAssemblyResolver"/>.</returns>
       /// <remarks>
@@ -358,7 +358,7 @@ namespace NuGetUtils.Lib.AssemblyResolving
       /// <param name="thisFrameworkRestoreResult">The <see cref="LockFile"/> obtained by restoring the framework package. For .NET Core, this framework package is the one with ID <c>Microsoft.NETCore.App</c>.</param>
       /// <param name="createdLoader">This parameter will contain the newly created <see cref="System.Runtime.Loader.AssemblyLoadContext"/>.</param>
       /// <param name="additionalCheckForDefaultLoader">The optional callback to check whether some assembly needs to be loaded using parent loader (the loader which loaded this assembly).</param>
-      /// <param name="defaultGetFiles">The optional callback to give to <see cref="M:E_UtilPack.ExtractAssemblyPaths{TResult}(BoundRestoreCommandUser, LockFile, Func{string, IEnumerable{string}, TResult}, GetFileItemsDelegate)"/> method.</param>
+      /// <param name="defaultGetFiles">The optional callback to give to <see cref="M:E_NuGetUtils.ExtractAssemblyPaths{TResult}(BoundRestoreCommandUser, LockFile, Func{string, IEnumerable{string}, TResult}, GetFileItemsDelegate)"/> method.</param>
       /// <param name="pathProcessor">The optional callback to process assembly path just before it is loaded. It can e.g. copy assembly to some temp folder in order to avoid locking assembly in package repository.</param>
       /// <param name="loadersRegistration">The enumeration controlling how to register to <see cref="System.Runtime.Loader.AssemblyLoadContext.Resolving"/> event of other <see cref="System.Runtime.Loader.AssemblyLoadContext"/> instances.</param>
       /// <param name="unmanagedAssemblyNameProcessor">The optional callback to get all potential unmanaged assembly paths. Will be <see cref="GetDefaultUnmanagedAssemblyPathCandidates"/> if <c>null</c>.</param>
