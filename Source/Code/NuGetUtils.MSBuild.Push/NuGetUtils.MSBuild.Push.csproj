@@ -25,8 +25,7 @@
     <VersionPrefix>1.0.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
-    <Description>MSBuild task to push packages. Most suitable to use in rapid development builds, where each build should propagate to (local) NuGet feed.
-The task in this package should be loaded by UtilPack.NuGet.MSBuild task factory.</Description>
+    <Description>MSBuild task to push packages. Most suitable to use in rapid development builds, where each build should propagate to (local) NuGet feed. The task in this package should be loaded by NuGetUtils.MSBuild.Exec task factory.</Description>
   </PropertyGroup>
 
   <!-- NuGet package stuff -->
@@ -34,9 +33,9 @@ The task in this package should be loaded by UtilPack.NuGet.MSBuild task factory
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Updated to newest (4.7.0) NuGet version.</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial release after renaming from UtilPack.NuGet.Push.MSBuild.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions nuget msbuild push</PackageTags>
-    <Title>MSBuild Task to Push NuGet Packages</Title>
+    <Title>NuGetUtils: NuGet Push MSBuild Task</Title>
   </PropertyGroup>
 
    <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />

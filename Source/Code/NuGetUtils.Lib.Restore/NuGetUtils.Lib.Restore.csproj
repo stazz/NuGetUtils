@@ -36,7 +36,7 @@
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
     <PackageReleaseNotes>Initial release after renaming the project from UtilPack.NuGet.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions restore</PackageTags>
-    <Title>NuGet Restore Helper</Title>
+    <Title>NuGetUtils: Restore Helper</Title>
   </PropertyGroup>
 
    <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />

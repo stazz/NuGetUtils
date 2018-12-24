@@ -27,7 +27,7 @@
       <VersionPrefix>1.0.0</VersionPrefix>
       <VersionSuffix></VersionSuffix>
       <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
-      <Description></Description>
+      <Description>Provides common abstractions for NuGetUtils global .NET Core tools.</Description>
    </PropertyGroup>
 
    <!-- NuGet package stuff -->
@@ -37,7 +37,7 @@
       <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
       <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
       <PackageTags>utility nuget extensions restore</PackageTags>
-      <Title></Title>
+      <Title>NuGetUtils: Common Tool Abstractions</Title>
    </PropertyGroup>
 
    <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />

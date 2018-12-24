@@ -28,7 +28,7 @@
     <VersionPrefix>1.0.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
-    <Description>Library containing BoundRestoreCommandUser class, which can be used to easily restore NuGet packages. Also several extension methods are provided to make life easier when working with NuGet types.</Description>
+    <Description>Provides some common abstractions and utilities for other NuGetUtils packages.</Description>
   </PropertyGroup>
 
   <!-- NuGet package stuff -->
@@ -38,7 +38,7 @@
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
     <PackageReleaseNotes>Initial release after renaming the project from UtilPack.NuGet.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions restore</PackageTags>
-    <Title>NuGet Restore Helper</Title>
+    <Title>NuGetUtils: Common Abstractions</Title>
   </PropertyGroup>
 
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />

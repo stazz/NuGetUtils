@@ -21,7 +21,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-     <VersionPrefix>1.0.0</VersionPrefix>
+     <VersionPrefix>1.1.0</VersionPrefix>
      <VersionSuffix></VersionSuffix>
      <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
      <Description>This tool will restore the given NuGet package and then execute a method within the restored DLLs. The method does not need to be marked as entrypoint, and it may contain other parameter types than the default string array type.</Description>
@@ -31,9 +31,9 @@
   <PropertyGroup>
      <PackageVersion>$(VersionPrefix)</PackageVersion>
      <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-     <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+     <PackageReleaseNotes>Updated to newer NuGet.Commands.</PackageReleaseNotes>
      <PackageTags>nuget package execute assembly tool load managed</PackageTags>
-     <Title>NuGet Package Executor</Title>
+     <Title>NuGetUtils: Package Executor Tool</Title>
   </PropertyGroup>
 
    <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
