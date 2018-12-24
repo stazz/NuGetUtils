@@ -39,7 +39,7 @@
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
     <PackageReleaseNotes>Initial release after renaming the project from UtilPack.NuGet.AssemblyLoading.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions dynamically load assembly</PackageTags>
-    <Title>NuGet Assembly Resolving Helper</Title>
+    <Title>NuGetUtils: Assembly Loading</Title>
   </PropertyGroup>
 
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />

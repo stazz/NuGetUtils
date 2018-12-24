@@ -142,13 +142,13 @@
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
     <PackageReleaseNotes>Initial release. New compared to the old incarnation (UtilPack.NuGet.MSBuild): ability to cache restore results to disk.</PackageReleaseNotes>
     <PackageTags>nuget utils msbuild exec</PackageTags>
-    <Title>Execute NuGet-based MSBuild Task</Title>
+    <Title>NuGetUtils: Package Executor MSBuild Task</Title>
     <NuspecBasePath>$(BaseOutputPath)</NuspecBasePath>
   </PropertyGroup>
 
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
   <PropertyGroup>
-    <NuspecProperties>PackageVersion=$(PackageVersion);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(PackageTags)</NuspecProperties>
+    <NuspecProperties>PackageVersion=$(PackageVersion);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(PackageTags);Title=$(Title)</NuspecProperties>
   </PropertyGroup>
 </Project>

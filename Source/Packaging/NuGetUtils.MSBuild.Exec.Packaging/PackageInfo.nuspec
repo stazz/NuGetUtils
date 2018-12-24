@@ -3,7 +3,7 @@
   <metadata>
     <id>NuGetUtils.MSBuild.Exec</id>
     <version>$PackageVersion$</version>
-    <title>Task Factory for Executing NuGet-Package -Based MSBuild Tasks</title>
+    <title>$Title$</title>
     <authors>Stanislav Muhametsin</authors>
     <owners>Stanislav Muhametsin</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

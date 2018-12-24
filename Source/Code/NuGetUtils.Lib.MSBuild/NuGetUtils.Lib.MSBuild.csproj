@@ -28,9 +28,9 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Updated to newer NuGet version.</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions nuget msbuild</PackageTags>
-    <Title>Common NuGet Types for MSBuild Tasks</Title>
+    <Title>NuGetUtils: Common MSBuild Utilities</Title>
   </PropertyGroup>
 
    <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
