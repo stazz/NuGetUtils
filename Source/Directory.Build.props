@@ -1,0 +1,32 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)/Directory.Build.BuildTargetFolders.props" />
+
+  <PropertyGroup>
+    <Authors>Stanislav Muhametsin</Authors>
+    <Company></Company>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Product>NuGetUtils</Product>
+    <Copyright>Stanislav Muhametsin</Copyright>
+    <PackageProjectUrl>https://github.com/stazz/$(Product)</PackageProjectUrl>
+    <RepositoryUrl>$(PackageProjectUrl)/tree/develop/Source/$(MSBuildProjectName)</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+   
+  <!-- Disable all debug information in release mode-->
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>False</DebugSymbols>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <NuGetTargetVersion>4.9.2</NuGetTargetVersion>
+    <!-- This enables things like still having NUGET_XYZ even when referencing NuGet package version x.y.z-something-else -->
+    <NuGetTargetVersionDashIndex>$(NuGetTargetVersion.IndexOf('-'))</NuGetTargetVersionDashIndex>
+    <NuGetVersionPlain Condition=" '$(NuGetTargetVersionDashIndex)' != '-1' " >$(NuGetTargetVersion.Substring(0, $(NuGetTargetVersion.IndexOf('-'))))</NuGetVersionPlain>
+    <NuGetVersionPlain Condition=" '$(NuGetVersionPlain)' == ''">$(NuGetTargetVersion)</NuGetVersionPlain>
+    <DefineConstants>$(DefineConstants);NUGET_$(NuGetVersionPlain.Replace('.', ''))</DefineConstants>
+  </PropertyGroup>
+</Project>

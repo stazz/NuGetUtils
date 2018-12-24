@@ -1,0 +1,154 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks Condition=" '$(TargetFramework)' == '' ">net46;netcoreapp1.1</TargetFrameworks>
+    <AssemblyName Condition=" '$(NuGetTargetVersion)' == '' or '$(TargetFramework)' == 'net46' ">NuGetUtils.MSBuild.Exec</AssemblyName>
+    <AssemblyName Condition=" '$(NuGetTargetVersion)' != '' and '$(TargetFramework)' != 'net46' ">NuGetUtils.MSBuild.Exec.NuGetSpecific</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <TreatSpecificWarningsAsErrors />
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <LangVersion>latest</LangVersion>
+    <DefineConstants Condition=" '$(TargetFramework)' != 'net46' ">$(DefineConstants);IS_NETSTANDARD</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <PackageReference>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <ProjectReference>
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46' ">
+    <PackageReference Include="Microsoft.Build.Framework" Version="14.3" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(NuGetTargetVersion)' != '' ">
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="NuGet.Commands" Version="$(NuGetTargetVersion)" />
+  </ItemGroup>
+  
+  <ItemGroup Condition=" '$(NuGetTargetVersion)' != '' ">
+    <ProjectReference Include="..\..\Code\NuGetUtils.Lib.AssemblyResolving\NuGetUtils.Lib.AssemblyResolving.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup Condition=" '$(NuGetTargetVersion)' == '' ">
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Threading.Tasks" />
+    <Reference Include="System.Collections" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(NuGetTargetVersion)' != '' ">
+    <None Include="build\**">
+      <Pack>true</Pack>
+      <PackagePath>build\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
+    </None>
+    <None Include="buildMultiTargeting\**">
+      <Pack>true</Pack>
+      <PackagePath>buildMultiTargeting\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
+    </None>
+    <Compile Include="..\..\Code\NuGetUtils.MSBuild.Exec\NuGetTaskRunnerFactory.cs" />
+    <Compile Include="..\..\Code\NuGetUtils.MSBuild.Exec\NuGetTaskRunnerFactory.NET.cs" />
+    <Compile Include="..\..\Code\NuGetUtils.MSBuild.Exec\NuGetTaskRunnerFactory.NETCore.cs" />
+    <Compile Include="..\..\Code\NuGetUtils.Lib.MSBuild\Logger.cs" Link="NuGetUtils.Lib.MSBuild.Logger.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(NuGetTargetVersion)' == '' ">
+    <Compile Include="NuGetTaskRunnerFactory.NETCore.Facade.cs" />
+  </ItemGroup>
+  
+  <Target Name="CopyBuildFolder" BeforeTargets="Build" Condition=" '$(NuGetTargetVersion)' == '' ">
+    <ItemGroup>
+      <CopyableBuildFile Include="$(MSBuildThisFileDirectory)build\*.*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(CopyableBuildFile)"
+      DestinationFolder="$(NuspecBasePath)\build"
+      />
+    <ItemGroup>
+      <CopyableBuildFile Include="$(MSBuildThisFileDirectory)buildMultiTargeting\*.*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(CopyableBuildFile)"
+      DestinationFolder="$(NuspecBasePath)\buildMultiTargeting"
+      />
+  </Target>
+  
+  <Target Name="CopyOutputForRelease" AfterTargets="AfterBuild">
+    <!-- When building for different nuget versions, the next build will delete the output DLL of the previous build.
+         In release build, we want to save that so that it can be packaged later.
+         -->
+    <ItemGroup>
+      <CopyableDLLs Include="$(OutputPath)$(AssemblyName).dll"/>
+      <CopyableDLLs Include="$(OutputPath)$(Product).*.dll"/>
+      <CopyableDLLs Include="$(OutputPath)UtilPack.dll"/>
+      <CopyableDLLs Include="$(OutputPath)System.Collections.Immutable.dll"/>
+    </ItemGroup>
+    
+    <!-- $(OutputPath)$(AssemblyName).dll;$(OutputPath)NuGetUtils.*.dll -->
+    <Copy
+      Condition=" '$(Configuration)' == 'Release' and '$(TargetFramework)' != 'net46' and '$(NuGetTargetVersion)' != ''"
+      SourceFiles="@(CopyableDLLs)"
+      DestinationFolder="$(OutputPath)..\NuGetSpecific\NuGet.$(NuGetVersionPlain)\"
+      />
+  </Target>
+  
+  <!-- Collect all dependencies and include them in the package itself, next to the Task assembly. -->
+  <Target Name="CollectRuntimeOutputs" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <Content Include="$(OutputPath)**\*.dll;$(OutputPath)**\*.dll.config;$(OutputPath)**\*.json">
+        <Pack>true</Pack>
+        <PackagePath>build\</PackagePath>
+      </Content>
+    </ItemGroup>
+  </Target>
+  
+  <PropertyGroup>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix></VersionSuffix>
+    <AssemblyTitle>NuGetUtils.MSBuild.Exec</AssemblyTitle>
+    <Description>Provides easy way to execute NuGet-based MSBuild tasks.</Description>
+    <NuspecFile>PackageInfo.nuspec</NuspecFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>NuGetUtils.MSBuild.Exec</PackageId>
+    <PackageVersion>$(VersionPrefix)</PackageVersion>
+    <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
+    <PackageReleaseNotes>Initial release. New compared to the old incarnation (UtilPack.NuGet.MSBuild): ability to cache restore results to disk.</PackageReleaseNotes>
+    <PackageTags>nuget utils msbuild exec</PackageTags>
+    <Title>NuGetUtils: Package Executor MSBuild Task</Title>
+    <NuspecBasePath>$(BaseOutputPath)</NuspecBasePath>
+  </PropertyGroup>
+
+  <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
+
+  <PropertyGroup>
+    <NuspecProperties>PackageVersion=$(PackageVersion);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(PackageTags);Title=$(Title)</NuspecProperties>
+  </PropertyGroup>
+</Project>
