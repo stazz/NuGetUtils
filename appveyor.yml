@@ -12,9 +12,8 @@ environment:
   RELATIVE_CS_OUTPUT: 'output/'
   CI_FOLDER: 'CIPipeline'
   DEPLOYABLE_BRANCH: 'HEAD'
-  DOTNET_VERSION: '2.1'
+  DOTNET_VERSION: '2.2'
   DEPLOY_NUGET_SOURCE: 'https://api.nuget.org/v3/index.json'
-  DEPLOY_NUGET_NO_SYMBOLS: true
   ADDITIONAL_VOLUME_DIRECTORIES: 'v4-ref-assemblies'
   PACKAGE_SCRIPT_WITHIN_CONTAINER: 'Build/package.sh'
   ASSEMBLY_SIGN_KEY:
