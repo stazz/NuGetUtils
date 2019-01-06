@@ -31,7 +31,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Tool.Restore", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec", "Code\NuGetUtils.MSBuild.Exec\NuGetUtils.MSBuild.Exec.csproj", "{D54D0518-E800-43A5-9F86-2E69D1F6809F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGetUtils.Common.Tests", "Tests\Tests.NuGetUtils.Lib.Common\Tests.NuGetUtils.Lib.Common.csproj", "{F2485290-1BC2-48BC-878E-6F339A054D17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.NuGetUtils.Lib.Common", "Tests\Tests.NuGetUtils.Lib.Common\Tests.NuGetUtils.Lib.Common.csproj", "{F2485290-1BC2-48BC-878E-6F339A054D17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGetUtils.MSBuild.Exec.Runner", "Code\NuGetUtils.MSBuild.Exec.Runner\NuGetUtils.MSBuild.Exec.Runner.csproj", "{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +101,10 @@ Global
 		{F2485290-1BC2-48BC-878E-6F339A054D17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2485290-1BC2-48BC-878E-6F339A054D17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2485290-1BC2-48BC-878E-6F339A054D17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

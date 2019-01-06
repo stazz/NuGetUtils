@@ -30,7 +30,7 @@ namespace NuGetUtils.Tool.Deploy
 
    }
 
-   internal sealed class NuGetExecutingProgram : NuGetRestoringProgram<NuGetDeploymentConfigurationImpl, ConfigurationConfigurationImpl>
+   internal sealed class NuGetExecutingProgram : NuGetRestoringProgramWithDocumentation<NuGetDeploymentConfigurationImpl, ConfigurationConfigurationImpl>
    {
       public NuGetExecutingProgram()
          : base( new DefaultCommandLineDocumentationInfo()
@@ -50,14 +50,14 @@ namespace NuGetUtils.Tool.Deploy
       }
 
       protected override Boolean ValidateConfiguration(
-         ConfigurationInformation info
+         ConfigurationInformation<NuGetDeploymentConfigurationImpl> info
          )
       {
          return !String.IsNullOrEmpty( info.Configuration.PackageID );
       }
 
       protected override async Task<Int32> UseRestorerAsync(
-         ConfigurationInformation info,
+         ConfigurationInformation<NuGetDeploymentConfigurationImpl> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,

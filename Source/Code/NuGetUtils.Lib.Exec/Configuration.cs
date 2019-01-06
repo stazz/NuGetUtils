@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using NuGetUtils.Lib.Exec;
 using System;
 
 namespace NuGetUtils.Lib.Exec
@@ -62,5 +63,24 @@ namespace NuGetUtils.Lib.Exec
       /// <remarks>This is needed, optionally together with <see cref="EntrypointTypeName"/>, when the assembly does not have <see cref="EntryPoint.ConfiguredEntryPointAttribute"/> applied to, and it is also lacking the entrypoint information within DLL file; or when the method to be executed is neither of those.</remarks>
       /// <seealso cref="EntryPoint.ConfiguredEntryPointAttribute"/>
       String EntrypointMethodName { get; }
+
+      Boolean RestoreSDKPackage { get; }
+   }
+}
+
+public static partial class E_NuGetUtils
+{
+   /// <summary>
+   /// Checks that this <see cref="NuGetExecutionConfiguration"/> is valid.
+   /// The configuration is valid when <see cref="NuGetExecutionConfiguration"/> itself is not null, and its <see cref="NuGetExecutionConfiguration.PackageID"/> is not <c>null</c> and not empty string.
+   /// </summary>
+   /// <param name="configuration">This <see cref="NuGetExecutionConfiguration"/>.</param>
+   /// <returns><c>true</c> if this <see cref="NuGetExecutionConfiguration"/> is valid; <c>false</c> otherwise.</returns>
+   public static Boolean ValidateConfiguration(
+      this NuGetExecutionConfiguration configuration
+      )
+   {
+      // Only package ID is necessary
+      return !String.IsNullOrEmpty( configuration?.PackageID );
    }
 }

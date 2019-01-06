@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <TreatSpecificWarningsAsErrors />
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj" />
+    <ProjectReference Include="..\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />
+  </ItemGroup>
+
+</Project>

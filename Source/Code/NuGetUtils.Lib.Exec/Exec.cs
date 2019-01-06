@@ -182,13 +182,62 @@ namespace NuGetUtils.Lib.Exec
       //}
 
    }
+
+   /// <summary>
+   /// This is marker class for when <see cref="E_NuGetUtils.ExecuteMethodWithinNuGetAssemblyAsync"/> is unable to find a method to execute.
+   /// </summary>
+   public sealed class NoExecutableMethodFound
+   {
+      internal static NoExecutableMethodFound Instance = new NoExecutableMethodFound();
+
+      private NoExecutableMethodFound()
+      {
+
+      }
+   }
 }
 
 /// <summary>
 /// This class contains extension methods for types defined in this assembly.
 /// </summary>
-public static class E_NuGetUtils
+public static partial class E_NuGetUtils
 {
+
+   public static
+#if !NET46
+      async
+#endif
+      Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodUsingRestorer(
+      this NuGetExecutionConfiguration configuration,
+      CancellationToken token,
+      BoundRestoreCommandUser restorer,
+      String sdkPackageID,
+      String sdkPackageVersion,
+      Func<Type, Object> additionalParameterTypeProvider
+#if NET46
+      , AppDomainSetup appDomainSetup
+#endif
+      )
+   {
+      return
+#if !NET46
+         await
+#endif
+         configuration.ExecuteMethodWithinNuGetAssemblyAsync(
+         token,
+         restorer,
+         additionalParameterTypeProvider,
+
+#if NET46
+         appDomainSetup
+#else
+         configuration.RestoreSDKPackage ?
+            await restorer.RestoreIfNeeded( sdkPackageID, sdkPackageVersion, token ) :
+            default( EitherOr<IEnumerable<String>, LockFile> )
+#endif
+         );
+   }
+
 #if NET46
    /// <summary>
    /// Using information from this <see cref="NuGetExecutionConfiguration"/>, restores the NuGet package, finds an assembly, and executes a method within the assembly.
@@ -198,6 +247,7 @@ public static class E_NuGetUtils
    /// <param name="token">The <see cref="CancellationToken"/> to use when performing <c>async</c> operations.</param>
    /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
    /// <param name="additionalParameterTypeProvider">The callback to provide values for method parameters with custom types.</param>
+   /// <param name="appDomainSetup">The app domain setup for the assembly loader. The value <c>null</c> indicates that the loader should use current AppDomain.</param>
    /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
@@ -217,27 +267,24 @@ public static class E_NuGetUtils
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
    /// <remarks>The <paramref name="additionalParameterTypeProvider"/> is only used when the method parameter type is not <see cref="CancellationToken"/>, or <see cref="Func{T, TResult}"/> delegate types which represent signatures of <see cref="NuGetAssemblyResolver"/> methods.</remarks>
 #endif
-   public static async Task<Int32> ExecuteMethodWithinNuGetAssemblyAsync(
+   public static async Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodWithinNuGetAssemblyAsync(
       this NuGetExecutionConfiguration configuration,
       CancellationToken token,
       BoundRestoreCommandUser restorer,
-      Func<Type, Object> additionalParameterTypeProvider
-#if !NET46
-      , EitherOr<IEnumerable<String>, LockFile> thisFrameworkRestoreResult = default
+      Func<Type, Object> additionalParameterTypeProvider,
+#if NET46
+      AppDomainSetup appDomainSetup
+#else
+      EitherOr<IEnumerable<String>, LockFile> thisFrameworkRestoreResult = default
 #endif
       )
    {
       ArgumentValidator.ValidateNotNullReference( configuration );
       ArgumentValidator.ValidateNotNull( nameof( restorer ), restorer );
-      Int32 retVal;
-
       using ( var assemblyLoader = NuGetAssemblyResolverFactory.NewNuGetAssemblyResolver(
          restorer,
 #if NET46
-         new AppDomainSetup()
-         {
-
-         },
+         appDomainSetup,
          out var appDomain
 #else
          out var loadContext,
@@ -253,89 +300,103 @@ public static class E_NuGetUtils
          var packageVersion = configuration.PackageVersion;
 
          var assembly = ( await assemblyLoader.LoadNuGetAssembly( packageID, packageVersion, token, configuration.AssemblyPath ) ) ?? throw new ArgumentException( $"Could not find package \"{packageID}\" at {( String.IsNullOrEmpty( packageVersion ) ? "latest version" : ( "version \"" + packageVersion + "\"" ) )}." );
-         var suitableMethod = new MethodSearcher( assembly, configuration.EntrypointTypeName, configuration.EntrypointMethodName ).GetSuitableMethod();
+         var suitableMethod = configuration.FindSuitableMethod( assembly );
 
-         if ( suitableMethod != null )
-         {
-            var paramsByType = new Object[]
-            {
-               token,
-               assemblyLoader.CreateAssemblyByPathResolverCallback(),
-               assemblyLoader.CreateAssemblyNameResolverCallback(),
-               assemblyLoader.CreateNuGetPackageResolverCallback(),
-               assemblyLoader.CreateNuGetPackagesResolverCallback(),
-               assemblyLoader.CreateTypeStringResolverCallback()
-            }.ToDictionary( o => o.GetType(), o => o );
-            Object invocationResult;
-            try
-            {
-               invocationResult = suitableMethod.Invoke(
-                  null,
-                  suitableMethod.GetParameters()
-                     .Select( p =>
-                        paramsByType.TryGetValue( p.ParameterType, out var paramValue ) ?
-                           paramValue :
-                           additionalParameterTypeProvider( p.ParameterType ) )
-                     .ToArray()
-                  );
-            }
-            catch ( TargetInvocationException tie )
-            {
-               throw tie.InnerException;
-            }
+         return suitableMethod == null ?
+            new EitherOr<Object, NoExecutableMethodFound>( NoExecutableMethodFound.Instance ) :
+            new EitherOr<Object, NoExecutableMethodFound>( await assemblyLoader.ExecuteSpecificMethod( suitableMethod, token, additionalParameterTypeProvider ) );
+      }
+   }
 
-            switch ( invocationResult )
-            {
-               case null:
-                  retVal = 0;
-                  break;
-               case Int32 i:
-                  retVal = i;
-                  break;
+   public static MethodInfo FindSuitableMethod(
+      this NuGetExecutionConfiguration configuration,
+      Assembly loadedAssembly
+      )
+   {
+      return new MethodSearcher( loadedAssembly, configuration.EntrypointTypeName, configuration.EntrypointMethodName ).GetSuitableMethod();
+   }
+
+   private static async Task<Object> ExecuteSpecificMethod(
+      this NuGetAssemblyResolver assemblyLoader,
+      MethodInfo suitableMethod,
+      CancellationToken token,
+      Func<Type, Object> additionalParameterTypeProvider
+      )
+   {
+      var paramsByType = new Object[]
+      {
+         token,
+         assemblyLoader.CreateAssemblyByPathResolverCallback(),
+         assemblyLoader.CreateAssemblyNameResolverCallback(),
+         assemblyLoader.CreateNuGetPackageResolverCallback(),
+         assemblyLoader.CreateNuGetPackagesResolverCallback(),
+         assemblyLoader.CreateTypeStringResolverCallback()
+      }.ToDictionary( o => o.GetType(), o => o );
+      Object invocationResult;
+      try
+      {
+         invocationResult = suitableMethod.Invoke(
+            null,
+            suitableMethod.GetParameters()
+               .Select( p =>
+                  paramsByType.TryGetValue( p.ParameterType, out var paramValue ) ?
+                     paramValue :
+                     additionalParameterTypeProvider( p.ParameterType ) )
+               .ToArray()
+            );
+      }
+      catch ( TargetInvocationException tie )
+      {
+         throw tie.InnerException;
+      }
+
+      Object retVal = null;
+      switch ( invocationResult )
+      {
+         case null:
+            break;
 #if NETCOREAPP2_1
-               case ValueTask v:
+         case ValueTask v:
 
-                  // This handles ValueTask
-                  await v;
-                  retVal = 0;
-                  break;
+            // This handles ValueTask
+            await v;
+            retVal = null;
+            break;
 #endif
-               default:
-                  var type = invocationResult.GetType().GetTypeInfo();
-                  if (
-                     ( ( type.IsGenericType && type.GenericTypeArguments.Length == 1 && Equals( type.GetGenericTypeDefinition(), typeof( ValueTask<> ) ) ) // Check for ValueTask<X>
-                     ||
-                     // The real return type of e.g. Task<X> is System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[X,SomeDelegateType], so we need to explore base types of return value.
-                     type
-                        .AsSingleBranchEnumerable( t => t.BaseType?.GetTypeInfo(), includeFirst: true )
-                        .Any( t =>
-                            t.IsGenericType
-                            && t.GenericTypeArguments.Length == 1
-                            && Equals( t.GetGenericTypeDefinition(), typeof( Task<> ) )
-                         )
+         default:
+            var type = invocationResult.GetType().GetTypeInfo();
+            // We must *first* check for Task<T>, since Task<T> extends Task
+            if (
+               ( ( type.IsGenericType && type.GenericTypeArguments.Length == 1 && Equals( type.GetGenericTypeDefinition(), typeof( ValueTask<> ) ) ) // Check for ValueTask<X>
+               ||
+                  // The real return type of e.g. Task<X> is System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[X,SomeDelegateType], so we need to explore base types of return value.
+                  type
+                     .AsSingleBranchEnumerable( t => t.BaseType?.GetTypeInfo(), includeFirst: true )
+                     .Any( t =>
+                         t.IsGenericType
+                         && t.GenericTypeArguments.Length == 1
+                         && Equals( t.GetGenericTypeDefinition(), typeof( Task<> ) )
                       )
-                      && ( (Object) await (dynamic) invocationResult ) is Int32 returnedInt
-                      )
-                  {
-                     // This handles Task<T> and ValueTask<T>
-                     retVal = returnedInt;
-                  }
-                  else
-                  {
-                     if ( invocationResult is Task voidTask )
-                     {
-                        // This handles Task
-                        await voidTask;
-                     }
-                     retVal = 0;
-                  }
-                  break;
+                   )
+                )
+            {
+               // This handles Task<T> and ValueTask<T>
+               retVal = await (dynamic) invocationResult;
             }
-         }
-         else
-         {
-            retVal = -3;
-         }
+            else
+            {
+               if ( invocationResult is Task voidTask )
+               {
+                  // This handles Task
+                  await voidTask;
+               }
+               else
+               {
+                  // Synchronous value
+                  retVal = invocationResult;
+               }
+            }
+            break;
       }
 
       return retVal;
