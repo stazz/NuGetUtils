@@ -63,6 +63,11 @@ namespace NuGetUtils.Tool.Exec
          ]
       public String EntrypointMethodName { get; set; }
 
+      [
+         Description( ValueName = "path", Description = "The path where to write the return value of the method, if any. Currently, the only format to write the result is JSON." )
+         ]
+      public String ReturnValuePath { get; set; }
+
       [IgnoreInDocumentation]
       public String[] ProcessArguments { get; set; }
 

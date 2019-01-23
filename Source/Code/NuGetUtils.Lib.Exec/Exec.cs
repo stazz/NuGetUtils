@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using Newtonsoft.Json;
 using NuGet.ProjectModel;
 using NuGetUtils.Lib.AssemblyResolving;
 using NuGetUtils.Lib.EntryPoint;
@@ -22,8 +23,10 @@ using NuGetUtils.Lib.Exec;
 using NuGetUtils.Lib.Restore;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
@@ -203,27 +206,20 @@ namespace NuGetUtils.Lib.Exec
 public static partial class E_NuGetUtils
 {
 
-   public static
-#if !NET46
-      async
-#endif
-      Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodUsingRestorer(
+   public static async Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodUsingRestorer(
       this NuGetExecutionConfiguration configuration,
       CancellationToken token,
       BoundRestoreCommandUser restorer,
-      String sdkPackageID,
-      String sdkPackageVersion,
-      Func<Type, Object> additionalParameterTypeProvider
+      Func<Type, Object> additionalParameterTypeProvider,
 #if NET46
-      , AppDomainSetup appDomainSetup
+      AppDomainSetup appDomainSetup
+#else
+      String sdkPackageID,
+      String sdkPackageVersion
 #endif
       )
    {
-      return
-#if !NET46
-         await
-#endif
-         configuration.ExecuteMethodWithinNuGetAssemblyAsync(
+      var maybeResult = await configuration.ExecuteMethodWithinNuGetAssemblyAsync(
          token,
          restorer,
          additionalParameterTypeProvider,
@@ -236,6 +232,25 @@ public static partial class E_NuGetUtils
             default( EitherOr<IEnumerable<String>, LockFile> )
 #endif
          );
+
+      // TODO output write to file or throw if NoExecutableMethodFound
+      String outputPath;
+      if ( maybeResult.IsFirst && !String.IsNullOrEmpty( outputPath = configuration.ReturnValuePath ) )
+      {
+         outputPath = Path.GetFullPath( outputPath );
+         using ( var sw = new StreamWriter( File.Open( outputPath, FileMode.Create, FileAccess.Write, FileShare.None ), new UTF8Encoding( false, false ) ) )
+         {
+            var serializer = new JsonSerializer
+            {
+               NullValueHandling = NullValueHandling.Include,
+               DefaultValueHandling = DefaultValueHandling.Include
+            };
+            // This is sync IO API - hopefully the thing to serialize isn't huge... otherwise it will make process uncancelable until end of serialization
+            serializer.Serialize( sw, maybeResult.First );
+         }
+      }
+
+      return maybeResult;
    }
 
 #if NET46

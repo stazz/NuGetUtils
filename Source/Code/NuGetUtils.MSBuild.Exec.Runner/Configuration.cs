@@ -51,7 +51,11 @@ namespace NuGetUtils.MSBuild.Exec.Runner
 
       public String EntrypointMethodName { get; set; }
 
+      public String ReturnValuePath { get; set; }
+
+#if !NET46
       public Boolean RestoreSDKPackage { get; set; }
+#endif
    }
 
    internal class ConfigurationConfigurationImpl : ConfigurationConfiguration

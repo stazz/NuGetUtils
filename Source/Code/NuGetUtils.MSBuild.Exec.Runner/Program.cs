@@ -46,11 +46,12 @@ namespace NuGetUtils.MSBuild.Exec.Runner
          var maybeResult = await config.ExecuteMethodUsingRestorer(
             token,
             restorer,
-            sdkPackageID,
-            sdkPackageVersion,
-            info.GetAdditonalTypeProvider( null )
+            info.GetAdditonalTypeProvider( null ),
 #if NET46
-            , null
+            null
+#else
+            sdkPackageID,
+            sdkPackageVersion
 #endif
             );
 

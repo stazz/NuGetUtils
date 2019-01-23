@@ -64,7 +64,21 @@ namespace NuGetUtils.Lib.Exec
       /// <seealso cref="EntryPoint.ConfiguredEntryPointAttribute"/>
       String EntrypointMethodName { get; }
 
+      /// <summary>
+      /// Gets the optional path where to write the return value of the method.
+      /// </summary>
+      /// <value>The optional path where to write the return value of the method.</value>
+      /// <remarks>Currently there is only one format to write the return value: JSON.</remarks>
+      String ReturnValuePath { get; }
+
+#if !NET46
+      /// <summary>
+      /// Gets the value indicating whether the SDK package (typically "Microsoft.NETCore.App" on .NET Core) should be restored.
+      /// </summary>
+      /// <value>The value indicating whether the SDK package (typically "Microsoft.NETCore.App" on .NET Core) should be restored.</value>
       Boolean RestoreSDKPackage { get; }
+
+#endif
    }
 }
 
