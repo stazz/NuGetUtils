@@ -83,12 +83,12 @@ namespace NuGetUtils.Tool.Exec
          )
       {
          var config = info.Configuration;
-         var maybeResult = await config.ExecuteMethodUsingRestorer(
+         var maybeResult = await config.ExecuteMethodAndSerializeReturnValue(
             token,
             restorer,
+            info.GetAdditonalTypeProvider( config.ProcessArguments ),
             sdkPackageID,
-            sdkPackageVersion,
-            info.GetAdditonalTypeProvider( config.ProcessArguments )
+            sdkPackageVersion
             );
          return maybeResult.IsFirst ?
             ( maybeResult.First is Int32 actualInt ? actualInt : 0 )

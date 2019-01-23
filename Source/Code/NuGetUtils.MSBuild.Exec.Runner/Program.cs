@@ -43,7 +43,7 @@ namespace NuGetUtils.MSBuild.Exec.Runner
          )
       {
          var config = info.Configuration;
-         var maybeResult = await config.ExecuteMethodUsingRestorer(
+         var maybeResult = await config.ExecuteMethodAndSerializeReturnValue(
             token,
             restorer,
             info.GetAdditonalTypeProvider( null ),

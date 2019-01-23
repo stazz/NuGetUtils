@@ -206,7 +206,35 @@ namespace NuGetUtils.Lib.Exec
 public static partial class E_NuGetUtils
 {
 
-   public static async Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodUsingRestorer(
+#if NET46
+   /// <summary>
+   /// This method invokes <see cref="ExecuteMethodWithinNuGetAssemblyAsync"/> and saves the return value to file, if so configured.
+   /// </summary>
+   /// <param name="configuration">This <see cref="NuGetExecutionConfiguration"/></param>
+   /// <param name="token">The <see cref="CancellationToken"/> to use when performing <c>async</c> operations.</param>
+   /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
+   /// <param name="additionalParameterTypeProvider">The callback to provide values for method parameters with custom types.</param>
+   /// <param name="appDomainSetup">The app domain setup for the assembly loader. The value <c>null</c> indicates that the loader should use current AppDomain.</param>
+   /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
+   /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
+   /// <remarks>The <paramref name="additionalParameterTypeProvider"/> is only used when the method parameter type is not <see cref="CancellationToken"/>, or <see cref="Func{T, TResult}"/> delegate types which represent signatures of <see cref="NuGetAssemblyResolver"/> methods.</remarks>
+#else
+   /// <summary>
+   /// This method invokes <see cref="ExecuteMethodWithinNuGetAssemblyAsync"/>, restoring the SDK package if so configured, and saves the return value to file, if so configured.
+   /// </summary>
+   /// <param name="configuration">This <see cref="NuGetExecutionConfiguration"/></param>
+   /// <param name="token">The <see cref="CancellationToken"/> to use when performing <c>async</c> operations.</param>
+   /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
+   /// <param name="additionalParameterTypeProvider">The callback to provide values for method parameters with custom types.</param>
+   /// <param name="sdkPackageID">The package ID of the SDK package to restore, if so configured.</param>
+   /// <param name="sdkPackageVersion">The package version of the SDK package to restore, if so configured.</param>
+   /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
+   /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
+   /// <remarks>The <paramref name="additionalParameterTypeProvider"/> is only used when the method parameter type is not <see cref="CancellationToken"/>, or <see cref="Func{T, TResult}"/> delegate types which represent signatures of <see cref="NuGetAssemblyResolver"/> methods.</remarks>
+#endif
+   public static async Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodAndSerializeReturnValue(
       this NuGetExecutionConfiguration configuration,
       CancellationToken token,
       BoundRestoreCommandUser restorer,
@@ -323,6 +351,12 @@ public static partial class E_NuGetUtils
       }
    }
 
+   /// <summary>
+   /// This is helper method to find suitable method used by <see cref="ExecuteMethodWithinNuGetAssemblyAsync"/>.
+   /// </summary>
+   /// <param name="configuration">This <see cref="NuGetExecutionConfiguration"/>.</param>
+   /// <param name="loadedAssembly">The assembly that has been loaded from NuGet package.</param>
+   /// <returns></returns>
    public static MethodInfo FindSuitableMethod(
       this NuGetExecutionConfiguration configuration,
       Assembly loadedAssembly
