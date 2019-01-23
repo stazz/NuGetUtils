@@ -18,4 +18,6 @@
     <ProjectReference Include="..\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />
   </ItemGroup>
 
+  <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
+
 </Project>
