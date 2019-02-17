@@ -20,6 +20,7 @@ using NuGet.Common;
 using NuGetUtils.Lib.Deployment;
 using NuGetUtils.Lib.MSBuild;
 using NuGetUtils.Lib.Restore;
+using NuGetUtils.Lib.Restore.Agnostic;
 using System;
 using System.IO;
 using System.Reflection;
@@ -28,7 +29,7 @@ using UtilPack;
 
 namespace NuGetUtils.MSBuild.Deployment
 {
-   public class DeployNuGetPackageTask : Microsoft.Build.Utilities.Task, NuGetDeploymentConfiguration, NuGetUsageConfiguration, ICancelableTask
+   public class DeployNuGetPackageTask : Microsoft.Build.Utilities.Task, NuGetDeploymentConfiguration, NuGetUsageConfiguration<LogLevel>, ICancelableTask
    {
       private readonly CancellationTokenSource _cancelTokenSource;
 
@@ -72,6 +73,8 @@ namespace NuGetUtils.MSBuild.Deployment
       public String NuGetConfigurationFile { get; set; }
 
       public String RestoreFramework { get; set; }
+
+      public String RestoreRuntimeID { get; set; }
 
       public String LockFileCacheDirectory { get; set; }
 

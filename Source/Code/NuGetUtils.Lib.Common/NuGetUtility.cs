@@ -231,9 +231,11 @@ namespace NuGetUtils.Lib.Common
                   break;
                case SDK_PACKAGE_NETCORE:
                   {
+#if !NET46
                      retVal = TryDetectSDKPackgeIDFromPaths( sdkPackageID );
                      if ( String.IsNullOrEmpty( retVal ) )
                      {
+#endif
                         var version = framework.Version;
                         switch ( version.Major )
                         {
@@ -269,7 +271,10 @@ namespace NuGetUtils.Lib.Common
                               retVal = null;
                               break;
                         }
+
+#if !NET46
                      }
+#endif
                   }
                   break;
                default:
@@ -279,6 +284,8 @@ namespace NuGetUtils.Lib.Common
          }
          return retVal;
       }
+
+#if !NET46
 
       private static String TryDetectSDKPackgeIDFromPaths(
          String sdkPackageID
@@ -305,6 +312,8 @@ namespace NuGetUtils.Lib.Common
 
          return retVal;
       }
+
+#endif
 
       /// <summary>
       /// This is helper method to try and deduce the <see cref="NuGetFramework"/> representing the currently running process.

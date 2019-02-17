@@ -20,9 +20,11 @@ using NuGet.ProjectModel;
 using NuGetUtils.Lib.AssemblyResolving;
 using NuGetUtils.Lib.EntryPoint;
 using NuGetUtils.Lib.Exec;
+using NuGetUtils.Lib.Exec.Agnostic;
 using NuGetUtils.Lib.Restore;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -30,6 +32,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
+
+using TAssemblyByPathResolverCallback = System.Func<System.String, System.Reflection.Assembly>;
+using TAssemblyNameResolverCallback = System.Func<System.Reflection.AssemblyName, System.Reflection.Assembly>;
+using TNuGetPackageResolverCallback = System.Func<System.String, System.String, System.String, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Reflection.Assembly>>;
+using TNuGetPackagesResolverCallback = System.Func<System.String[], System.String[], System.String[], System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Reflection.Assembly[]>>;
+using TTypeStringResolverCallback = System.Func<System.String, System.Type>;
+
 
 namespace NuGetUtils.Lib.Exec
 {
@@ -117,7 +126,8 @@ namespace NuGetUtils.Lib.Exec
       private MethodInfo SearchSuitableMethod()
       {
          var entryPointTypeName = this._entryPointTypeName;
-         return ( entryPointTypeName.IsNullOrEmpty() ? this._assembly.GetTypes() : this._assembly.GetType( entryPointTypeName, true, false ).Singleton() )
+         var assembly = this._assembly;
+         return ( entryPointTypeName.IsNullOrEmpty() ? assembly.GetTypes() : ( assembly.GetType( entryPointTypeName, false, false )?.Singleton() ?? assembly.GetTypes() ) )
             .Select( t => t.GetTypeInfo() )
             .Where( t => t.DeclaredMethods.Any( m => m.IsStatic ) )
             .Select( t => this.SearchSuitableMethod( t ) )
@@ -198,6 +208,48 @@ namespace NuGetUtils.Lib.Exec
 
       }
    }
+
+   /// <summary>
+   /// This class contains extensions methods defined for types in another assemblies.
+   /// </summary>
+   public static class NuGetUtilsExtensions
+   {
+      /// <summary>
+      /// This is helper method to find suitable method used by <see cref="E_NuGetUtils.ExecuteMethodWithinNuGetAssemblyAsync"/>.
+      /// </summary>
+      /// <param name="loadedAssembly">The assembly that has been loaded from NuGet package.</param>
+      /// <param name="entrypointTypeName">The optional name of the type containing method to execute.</param>
+      /// <param name="entrypointMethodName">The optional name of the method to execute.</param>
+      /// <returns></returns>
+      public static MethodInfo FindSuitableMethodForNuGetExec(
+         this Assembly loadedAssembly,
+         String entrypointTypeName = null,
+         String entrypointMethodName = null
+         )
+      {
+         return new MethodSearcher( loadedAssembly, entrypointTypeName, entrypointMethodName ).GetSuitableMethod();
+      }
+   }
+
+
+   /// <summary>
+   /// This class holds some static utility methods and properties related to executing method within NuGet-restored assemblies.
+   /// </summary>
+   public static partial class NuGetExecutionUtils
+   {
+      /// <summary>
+      /// This the types which are 'special' - the NuGet method execution APIs provided by <see cref="E_NuGetUtils"/> will treat these specially and inject their own callbacks as values.
+      /// </summary>
+      public static ImmutableHashSet<Type> SpecialTypesForMethodArguments { get; } = new[]
+      {
+         typeof(CancellationToken),
+         typeof(TAssemblyByPathResolverCallback),
+         typeof(TAssemblyNameResolverCallback),
+         typeof(TNuGetPackageResolverCallback),
+         typeof(TNuGetPackagesResolverCallback),
+         typeof(TTypeStringResolverCallback)
+      }.ToImmutableHashSet();
+   }
 }
 
 /// <summary>
@@ -255,9 +307,7 @@ public static partial class E_NuGetUtils
 #if NET46
          appDomainSetup
 #else
-         configuration.RestoreSDKPackage ?
-            await restorer.RestoreIfNeeded( sdkPackageID, sdkPackageVersion, token ) :
-            default( EitherOr<IEnumerable<String>, LockFile> )
+         await configuration.RestoreIfNeeded( token, restorer, sdkPackageID, sdkPackageVersion )
 #endif
          );
 
@@ -310,11 +360,113 @@ public static partial class E_NuGetUtils
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
    /// <remarks>The <paramref name="additionalParameterTypeProvider"/> is only used when the method parameter type is not <see cref="CancellationToken"/>, or <see cref="Func{T, TResult}"/> delegate types which represent signatures of <see cref="NuGetAssemblyResolver"/> methods.</remarks>
 #endif
-   public static async Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodWithinNuGetAssemblyAsync(
+   public static Task<EitherOr<Object, NoExecutableMethodFound>> ExecuteMethodWithinNuGetAssemblyAsync(
       this NuGetExecutionConfiguration configuration,
       CancellationToken token,
       BoundRestoreCommandUser restorer,
       Func<Type, Object> additionalParameterTypeProvider,
+#if NET46
+      AppDomainSetup appDomainSetup
+#else
+      EitherOr<IEnumerable<String>, LockFile> thisFrameworkRestoreResult = default
+#endif
+      )
+   {
+      return configuration.PerformFindMethodForExecutingWithinNuGetAssemblyAsync(
+         token,
+         restorer,
+         async ( assemblyLoader, suitableMethod ) => suitableMethod == null ?
+            new EitherOr<Object, NoExecutableMethodFound>( NoExecutableMethodFound.Instance ) :
+            new EitherOr<Object, NoExecutableMethodFound>( await assemblyLoader.ExecuteSpecificMethod( suitableMethod, token, additionalParameterTypeProvider ) ),
+#if NET46
+            appDomainSetup
+#else
+            thisFrameworkRestoreResult
+#endif
+            );
+   }
+
+#if NET46
+   /// <summary>
+   /// Using information from this <see cref="NuGetExecutionConfiguration"/>, restores the NuGet package, finds an assembly, and finds a suitable method within the assembly to execute.
+   /// </summary>
+   /// <param name="configuration">This <see cref="NuGetExecutionConfiguration"/></param>
+   /// <param name="token">The <see cref="CancellationToken"/> to use when performing <c>async</c> operations.</param>
+   /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
+   /// <param name="useMethod">Callback to use the <see cref="MethodInfo"/> that was found (or <c>null</c>) within the context of <see cref="NuGetAssemblyResolver"/> being used.</param>
+   /// <param name="appDomainSetup">The app domain setup for the assembly loader. The value <c>null</c> indicates that the loader should use current AppDomain.</param>
+   /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
+   /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
+#else
+   /// <summary>
+   /// Using information from this <see cref="NuGetExecutionConfiguration"/>, restores the NuGet package, finds an assembly, and finds a suitable method within the assembly to execute.
+   /// </summary>
+   /// <param name="configuration">This <see cref="NuGetExecutionConfiguration"/></param>
+   /// <param name="token">The <see cref="CancellationToken"/> to use when performing <c>async</c> operations.</param>
+   /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
+   /// <param name="useMethod">Callback to use the <see cref="MethodInfo"/> that was found (or <c>null</c>) within the context of <see cref="NuGetAssemblyResolver"/> being used.</param>
+   /// <param name="sdkPackageID">The package ID of the SDK package to restore, if so configured.</param>
+   /// <param name="sdkPackageVersion">The package version of the SDK package to restore, if so configured.</param>
+   /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
+   /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
+#endif
+   public static
+#if !NET46
+      async
+#endif
+      Task<TResult> FindMethodForExecutingWithinNuGetAssemblyAsync<TResult>(
+      this NuGetExecutionConfiguration configuration,
+      CancellationToken token,
+      BoundRestoreCommandUser restorer,
+      Func<NuGetAssemblyResolver, MethodInfo, Task<TResult>> useMethod,
+#if NET46
+      AppDomainSetup appDomainSetup
+#else
+      String sdkPackageID,
+      String sdkPackageVersion
+#endif
+      )
+   {
+      return
+#if !NET46
+         await
+#endif
+         configuration.PerformFindMethodForExecutingWithinNuGetAssemblyAsync(
+            token,
+            restorer,
+            useMethod,
+#if NET46
+            appDomainSetup
+#else
+            await configuration.RestoreIfNeeded( token, restorer, sdkPackageID, sdkPackageVersion )
+#endif
+            );
+   }
+
+#if !NET46
+
+   private static async Task<EitherOr<IEnumerable<String>, LockFile>> RestoreIfNeeded(
+      this NuGetExecutionConfiguration configuration,
+      CancellationToken token,
+      BoundRestoreCommandUser restorer,
+      String sdkPackageID,
+      String sdkPackageVersion
+      )
+   {
+      return configuration.RestoreSDKPackage ?
+            await restorer.RestoreIfNeeded( sdkPackageID, sdkPackageVersion, token ) :
+            default( EitherOr<IEnumerable<String>, LockFile> );
+   }
+
+#endif
+
+   private static async Task<TResult> PerformFindMethodForExecutingWithinNuGetAssemblyAsync<TResult>(
+      this NuGetExecutionConfiguration configuration,
+      CancellationToken token,
+      BoundRestoreCommandUser restorer,
+      Func<NuGetAssemblyResolver, MethodInfo, Task<TResult>> useMethod,
 #if NET46
       AppDomainSetup appDomainSetup
 #else
@@ -343,11 +495,7 @@ public static partial class E_NuGetUtils
          var packageVersion = configuration.PackageVersion;
 
          var assembly = ( await assemblyLoader.LoadNuGetAssembly( packageID, packageVersion, token, configuration.AssemblyPath ) ) ?? throw new ArgumentException( $"Could not find package \"{packageID}\" at {( String.IsNullOrEmpty( packageVersion ) ? "latest version" : ( "version \"" + packageVersion + "\"" ) )}." );
-         var suitableMethod = configuration.FindSuitableMethod( assembly );
-
-         return suitableMethod == null ?
-            new EitherOr<Object, NoExecutableMethodFound>( NoExecutableMethodFound.Instance ) :
-            new EitherOr<Object, NoExecutableMethodFound>( await assemblyLoader.ExecuteSpecificMethod( suitableMethod, token, additionalParameterTypeProvider ) );
+         return await useMethod( assemblyLoader, configuration.FindSuitableMethod( assembly ) );
       }
    }
 
@@ -362,7 +510,7 @@ public static partial class E_NuGetUtils
       Assembly loadedAssembly
       )
    {
-      return new MethodSearcher( loadedAssembly, configuration.EntrypointTypeName, configuration.EntrypointMethodName ).GetSuitableMethod();
+      return loadedAssembly.FindSuitableMethodForNuGetExec( configuration.EntrypointTypeName, configuration.EntrypointMethodName );
    }
 
    private static async Task<Object> ExecuteSpecificMethod(

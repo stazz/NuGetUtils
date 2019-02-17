@@ -52,6 +52,7 @@ using TLocalNuspecCache = NuGet.Protocol.
 LocalPackageFileCache
 #endif
          ;
+using NuGetUtils.Lib.Restore.Agnostic;
 #endif
 
 #if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
@@ -588,6 +589,55 @@ namespace NuGetUtils.Lib.Restore
 /// </summary>
 public static partial class E_NuGetUtils
 {
+   /// <summary>
+   /// Given this <see cref="NuGetUsageConfiguration{TLogLevel}"/>, creates a new instance of <see cref="BoundRestoreCommandUser"/> utilizing the properties of <see cref="NuGetUsageConfiguration{TLogLevel}"/>, and then calls given <paramref name="callback"/>.
+   /// </summary>
+   /// <typeparam name="TResult">The return type of given <paramref name="callback"/>.</typeparam>
+   /// <param name="configuration">This <see cref="NuGetUsageConfiguration{TLogLevel}"/>.</param>
+   /// <param name="nugetSettingsPath">The object specifying what to pass as first parameter <see cref="NuGetUtility.GetNuGetSettingsWithDefaultRootDirectory"/>: if <see cref="String"/>, then it is passed directly as is, otherwise when it is <see cref="Type"/>, the <see cref="Assembly.CodeBase"/> of the <see cref="Assembly"/> holding the given <see cref="Type"/> is used to extract directory, and that directory is then passed on to <see cref="NuGetUtility.GetNuGetSettingsWithDefaultRootDirectory"/> method.</param>
+   /// <param name="lockFileCacheDirEnvName">The environment name of the variable holding default lock file cache directory.</param>
+   /// <param name="lockFileCacheDirWithinHomeDir">The directory name within home directory of current user which can be used as lock file cache directory.</param>
+   /// <param name="callback">The callback to use created <see cref="BoundRestoreCommandUser"/>. The parameter contains <see cref="BoundRestoreCommandUser"/> as first tuple component, the SDK package ID deduced using <see cref="BoundRestoreCommandUser.ThisFramework"/> and <see cref="NuGetUsageConfiguration{TLogLevel}.SDKFrameworkPackageID"/> as second tuple component, and the SDK package version deduced using <see cref="BoundRestoreCommandUser.ThisFramework"/>, SDK package ID, and <see cref="NuGetUsageConfiguration{TLogLevel}.SDKFrameworkPackageVersion"/> as third tuple component.</param>
+   /// <param name="loggerFactory">The callback to create <see cref="ILogger"/> for the <see cref="BoundRestoreCommandUser"/>. May be <c>null</c>.</param>
+   /// <returns>The return value of <paramref name="callback"/>.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="NuGetUsageConfiguration{TLogLevel}"/> is <c>null</c>.</exception>
+   public static TResult CreateAndUseRestorerAsync<TResult>(
+      this NuGetUsageConfiguration<LogLevel> configuration,
+      EitherOr<String, Type> nugetSettingsPath,
+      String lockFileCacheDirEnvName,
+      String lockFileCacheDirWithinHomeDir,
+      Func<(BoundRestoreCommandUser Restorer, String SDKPackageID, String SDKPackageVersion), TResult> callback,
+      Func<ILogger> loggerFactory
+      )
+   {
+      var targetFWString = configuration.RestoreFramework;
+
+      using ( var restorer = new BoundRestoreCommandUser(
+         NuGetUtility.GetNuGetSettingsWithDefaultRootDirectory(
+            nugetSettingsPath.IsFirst ? nugetSettingsPath.First : Path.GetDirectoryName( new Uri( nugetSettingsPath.Second.GetTypeInfo().Assembly.CodeBase ).LocalPath ),
+            configuration.NuGetConfigurationFile
+            ),
+         thisFramework: String.IsNullOrEmpty( targetFWString ) ? null : NuGetFramework.Parse( targetFWString ),
+         nugetLogger: configuration.DisableLogging ? null : loggerFactory?.Invoke(),
+         lockFileCacheDir: configuration.LockFileCacheDirectory,
+         lockFileCacheEnvironmentVariableName: lockFileCacheDirEnvName,
+         getDefaultLockFileCacheDir: homeDir => Path.Combine( homeDir, lockFileCacheDirWithinHomeDir ),
+         disableLockFileCacheDir: configuration.DisableLockFileCache,
+         runtimeIdentifier: configuration.RestoreRuntimeID
+         ) )
+      {
+
+         var thisFramework = restorer.ThisFramework;
+         var sdkPackageID = thisFramework.GetSDKPackageID( configuration.SDKFrameworkPackageID );
+
+         return callback( (
+            restorer,
+            sdkPackageID,
+            thisFramework.GetSDKPackageVersion( sdkPackageID, configuration.SDKFrameworkPackageVersion )
+            ) );
+      }
+   }
+
    /// <summary>
    /// Performs restore command for given package and version, if not already cached.
    /// Returns resulting lock file.

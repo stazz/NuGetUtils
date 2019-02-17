@@ -16,10 +16,13 @@
  * limitations under the License. 
  */
 using Microsoft.Extensions.Configuration;
+using NuGet.Common;
 using NuGet.Frameworks;
 using NuGetUtils.Lib.Common;
 using NuGetUtils.Lib.Restore;
+using NuGetUtils.Lib.Restore.Agnostic;
 using NuGetUtils.Lib.Tool;
+using NuGetUtils.Lib.Tool.Agnostic;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -31,6 +34,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
 using UtilPack.Documentation;
+using UtilPack.JSON.Configuration;
 
 namespace NuGetUtils.Lib.Tool
 {
@@ -43,7 +47,7 @@ namespace NuGetUtils.Lib.Tool
    /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
    /// <remarks>
    /// <para>The configuration types are type parameters so that the actual types could have their own dedicated <see cref="RequiredAttribute"/> and <see cref="DescriptionAttribute"/> attributes for the documentation.</para>
-   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, global::System.String[])"/> or <see cref="JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
+   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, String[])"/> or <see cref="Microsoft.Extensions.Configuration.JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
    /// This typically results in direct argument name -> property name binding.</para>
    /// <para>For example, specifying "--MyArgument=MyValue" would require the <typeparamref name="TCommandLineConfiguration"/> to have a (string) property named "MyArgument" which would also need to be settable.
    /// Then, after the <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method invocation, the "MyArgument" property would have value "MyValue".</para>
@@ -100,15 +104,23 @@ namespace NuGetUtils.Lib.Tool
                }
                else
                {
-                  configRoot = new ConfigurationBuilder()
-                     .AddJsonFile( Path.GetFullPath(
-                        new ConfigurationBuilder()
-                           .AddCommandLine( args.Take( programArgStart ).ToArray() )
-                           .Build()
-                           .Get<TConfigurationConfiguration>()
-                           .ConfigurationFileLocation
-                           )
-                        );
+                  var configConfigPath = new ConfigurationBuilder()
+                     .AddCommandLine( args.Take( programArgStart ).ToArray() )
+                     .Build()
+                     .Get<TConfigurationConfiguration>()
+                     .ConfigurationFileLocation;
+                  var configBuilder = new ConfigurationBuilder();
+                  if ( String.Equals( DefaultConfigurationConfiguration.STANDARD_INPUT_OUR_OUTPUT_MARKER, configConfigPath ) )
+                  {
+                     // Read from stdin
+                     configRoot = configBuilder
+                        .AddJsonContents( await Console.OpenStandardInput( 0x1000 ).ReadUntilTheEndAsync( default ) );
+                  }
+                  else
+                  {
+                     configRoot = configBuilder
+                        .AddJsonFile( Path.GetFullPath( configConfigPath ) );
+                  }
                }
             }
             else
@@ -284,13 +296,13 @@ namespace NuGetUtils.Lib.Tool
    /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
    /// <remarks>
    /// <para>The configuration types are type parameters so that the actual types could have their own dedicated <see cref="RequiredAttribute"/> and <see cref="DescriptionAttribute"/> attributes for the documentation.</para>
-   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, global::System.String[])"/> or <see cref="JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
+   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, global::System.String[])"/> or <see cref="Microsoft.Extensions.Configuration.JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
    /// This typically results in direct argument name -> property name binding.</para>
    /// <para>For example, specifying "--MyArgument=MyValue" would require the <typeparamref name="TCommandLineConfiguration"/> to have a (string) property named "MyArgument" which would also need to be settable.
    /// Then, after the <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method invocation, the "MyArgument" property would have value "MyValue".</para>
    /// </remarks>
    public abstract class NuGetRestoringProgram<TCommandLineConfiguration, TConfigurationConfiguration> : Program<TCommandLineConfiguration, TConfigurationConfiguration>
-      where TCommandLineConfiguration : class, NuGetUsageConfiguration
+      where TCommandLineConfiguration : class, NuGetUsageConfiguration<LogLevel>
       where TConfigurationConfiguration : class, ConfigurationConfiguration
    {
 
@@ -369,7 +381,7 @@ namespace NuGetUtils.Lib.Tool
    /// <typeparam name="TCommandLineConfiguration">The actual type that is the configuration for the program.</typeparam>
    /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
    public abstract class NuGetRestoringProgramWithDocumentation<TCommandLineConfiguration, TConfigurationConfiguration> : NuGetRestoringProgram<TCommandLineConfiguration, TConfigurationConfiguration>
-      where TCommandLineConfiguration : class, NuGetUsageConfiguration
+      where TCommandLineConfiguration : class, NuGetUsageConfiguration<LogLevel>
       where TConfigurationConfiguration : class, ConfigurationConfiguration
    {
       private readonly Lazy<String> _documentation;

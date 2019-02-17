@@ -15,27 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using NuGet.Common;
+using NuGetUtils.Lib.Exec;
 using NuGetUtils.Lib.Restore;
 using NuGetUtils.Lib.Tool;
+using NuGetUtils.Lib.Tool.Agnostic;
+using NuGetUtils.MSBuild.Exec.Common;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NuGetUtils.MSBuild.Exec.Runner
+namespace NuGetUtils.MSBuild.Exec.Perform
 {
    internal static class Program
    {
       public static Task<Int32> Main( String[] args )
-         => new NuGetExecutingProgram().MainAsync( args, NuGetExecutingProgram.EXEC_ARGS_SEPARATOR );
+         => new NuGetProgram().MainAsync( args, NuGetProgram.EXEC_ARGS_SEPARATOR );
 
    }
 
-   internal sealed class NuGetExecutingProgram : NuGetRestoringProgram<NuGetExecutionConfigurationImpl, ConfigurationConfigurationImpl>
+   internal sealed class NuGetProgram : NuGetRestoringProgram<DefaultNuGetExecutionConfiguration<LogLevel>, DefaultConfigurationConfiguration>
    {
       internal const String EXEC_ARGS_SEPARATOR = "--";
 
       protected override async Task<Int32> UseRestorerAsync(
-         ConfigurationInformation<NuGetExecutionConfigurationImpl> info,
+         ConfigurationInformation<DefaultNuGetExecutionConfiguration<LogLevel>> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,
@@ -55,12 +59,12 @@ namespace NuGetUtils.MSBuild.Exec.Runner
 #endif
             );
 
-         throw new NotImplementedException();
+         return maybeResult.IsFirst ? 0 : -3;
 
       }
 
       protected override Boolean ValidateConfiguration(
-         ConfigurationInformation<NuGetExecutionConfigurationImpl> info
+         ConfigurationInformation<DefaultNuGetExecutionConfiguration<LogLevel>> info
          )
       {
          return info.Configuration.ValidateConfiguration();

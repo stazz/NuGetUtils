@@ -14,8 +14,8 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="..\NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj" />
-    <ProjectReference Include="..\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />
+    <ProjectReference Include="..\Common\NuGetUtils.MSBuild.Exec.Common.csproj" />
+    <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />
   </ItemGroup>
 
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />

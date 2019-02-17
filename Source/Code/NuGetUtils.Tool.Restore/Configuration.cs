@@ -18,14 +18,16 @@
 using NuGet.Common;
 using NuGetUtils.Lib.Common;
 using NuGetUtils.Lib.Restore;
+using NuGetUtils.Lib.Restore.Agnostic;
 using NuGetUtils.Lib.Tool;
+using NuGetUtils.Lib.Tool.Agnostic;
 using System;
 using UtilPack.Documentation;
 using static NuGetUtils.Lib.Tool.DefaultDocumentation;
 
 namespace NuGetUtils.Tool.Restore
 {
-   internal sealed class NuGetRestoreConfiguration : NuGetUsageConfiguration
+   internal sealed class NuGetRestoreConfiguration : NuGetUsageConfiguration<LogLevel>
    {
       [Required( Conditional = true ), Description( ValueName = "packageID", Description = "The ID of the single package to be restored. If this property is specified, the options \"" + nameof( PackageIDs ) + "\" and \"" + nameof( PackageVersions ) + "\" *must not* be specified." )]
       public String PackageID { get; set; }
@@ -52,6 +54,10 @@ namespace NuGetUtils.Tool.Restore
          Description( ValueName = RestoreFrameworkValue, Description = RestoreFrameworkDescription )
          ]
       public String RestoreFramework { get; set; }
+
+      [
+         Description( ValueName = RestoreRIDValue, Description = RestoreRIDDescription )]
+      public String RestoreRuntimeID { get; set; }
 
 
       [

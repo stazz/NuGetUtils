@@ -33,7 +33,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.NuGetUtils.Lib.Common", "Tests\Tests.NuGetUtils.Lib.Common\Tests.NuGetUtils.Lib.Common.csproj", "{F2485290-1BC2-48BC-878E-6F339A054D17}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGetUtils.MSBuild.Exec.Runner", "Code\NuGetUtils.MSBuild.Exec.Runner\NuGetUtils.MSBuild.Exec.Runner.csproj", "{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec.Perform", "NuGetUtils.MSBuild.Exec\Perform\NuGetUtils.MSBuild.Exec.Perform.csproj", "{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec.Inspect", "NuGetUtils.MSBuild.Exec\Inspect\NuGetUtils.MSBuild.Exec.Inspect.csproj", "{E4DF67FD-FD69-4D47-A94C-639DDFFF6F22}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Exec.Agnostic", "Code\NuGetUtils.Lib.Exec.Agnostic\NuGetUtils.Lib.Exec.Agnostic.csproj", "{F88236B2-3A07-4A61-A29E-E8592669A876}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Restore.Agnostic", "Code\NuGetUtils.Lib.Restore.Agnostic\NuGetUtils.Lib.Restore.Agnostic.csproj", "{1EBA2D64-551E-4F44-9B68-917989F8AFEE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec.Common", "NuGetUtils.MSBuild.Exec\Common\NuGetUtils.MSBuild.Exec.Common.csproj", "{961A934B-0D43-4728-B09B-BBEF9B57ADCB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec.Discover", "NuGetUtils.MSBuild.Exec\Discover\NuGetUtils.MSBuild.Exec.Discover.csproj", "{9B4A94AB-9F9A-4D89-83FF-36EA1F29E016}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Tool.Agnostic", "Code\NuGetUtils.Lib.Tool.Agnostic\NuGetUtils.Lib.Tool.Agnostic.csproj", "{99CA0168-74E3-4BA0-A2F2-165E3FE7B7A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.NuGetUtils.MSBuild.Exec", "Tests\Tests.NuGetUtils.MSBuild.Exec\Tests.NuGetUtils.MSBuild.Exec.csproj", "{CBF89A31-3C47-433D-A6B6-B07F5F046984}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -105,6 +119,34 @@ Global
 		{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1AA776D-E200-4631-8BD4-AE5BF14A15C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4DF67FD-FD69-4D47-A94C-639DDFFF6F22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4DF67FD-FD69-4D47-A94C-639DDFFF6F22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4DF67FD-FD69-4D47-A94C-639DDFFF6F22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4DF67FD-FD69-4D47-A94C-639DDFFF6F22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F88236B2-3A07-4A61-A29E-E8592669A876}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F88236B2-3A07-4A61-A29E-E8592669A876}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F88236B2-3A07-4A61-A29E-E8592669A876}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F88236B2-3A07-4A61-A29E-E8592669A876}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EBA2D64-551E-4F44-9B68-917989F8AFEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EBA2D64-551E-4F44-9B68-917989F8AFEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EBA2D64-551E-4F44-9B68-917989F8AFEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EBA2D64-551E-4F44-9B68-917989F8AFEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{961A934B-0D43-4728-B09B-BBEF9B57ADCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{961A934B-0D43-4728-B09B-BBEF9B57ADCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{961A934B-0D43-4728-B09B-BBEF9B57ADCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{961A934B-0D43-4728-B09B-BBEF9B57ADCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B4A94AB-9F9A-4D89-83FF-36EA1F29E016}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B4A94AB-9F9A-4D89-83FF-36EA1F29E016}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B4A94AB-9F9A-4D89-83FF-36EA1F29E016}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B4A94AB-9F9A-4D89-83FF-36EA1F29E016}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99CA0168-74E3-4BA0-A2F2-165E3FE7B7A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99CA0168-74E3-4BA0-A2F2-165E3FE7B7A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99CA0168-74E3-4BA0-A2F2-165E3FE7B7A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99CA0168-74E3-4BA0-A2F2-165E3FE7B7A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBF89A31-3C47-433D-A6B6-B07F5F046984}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBF89A31-3C47-433D-A6B6-B07F5F046984}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBF89A31-3C47-433D-A6B6-B07F5F046984}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBF89A31-3C47-433D-A6B6-B07F5F046984}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

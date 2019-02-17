@@ -19,15 +19,18 @@ using NuGet.Common;
 using NuGet.ProjectModel;
 using NuGetUtils.Lib.EntryPoint;
 using NuGetUtils.Lib.Exec;
+using NuGetUtils.Lib.Exec.Agnostic;
 using NuGetUtils.Lib.Restore;
+using NuGetUtils.Lib.Restore.Agnostic;
 using NuGetUtils.Lib.Tool;
+using NuGetUtils.Lib.Tool.Agnostic;
 using System;
 using UtilPack.Documentation;
 using static NuGetUtils.Lib.Tool.DefaultDocumentation;
 
 namespace NuGetUtils.Tool.Exec
 {
-   internal sealed class NuGetExecutionConfigurationImpl : NuGetExecutionConfiguration, NuGetUsageConfiguration
+   internal sealed class NuGetExecutionConfigurationImpl : NuGetExecutionConfiguration, NuGetUsageConfiguration<LogLevel>
    {
 
       [
@@ -85,6 +88,10 @@ namespace NuGetUtils.Tool.Exec
          Description( ValueName = RestoreFrameworkValue, Description = RestoreFrameworkDescription )
          ]
       public String RestoreFramework { get; set; }
+
+      [
+         Description( ValueName = RestoreRIDValue, Description = RestoreRIDDescription )]
+      public String RestoreRuntimeID { get; set; }
 
 
       [
