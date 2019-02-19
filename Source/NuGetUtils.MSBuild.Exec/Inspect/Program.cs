@@ -82,7 +82,11 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
 
          if ( retVal == 0 )
          {
-            await WriteMethodInformationToFileAsync( config.InspectFilePath, methodOrNull );
+            await WriteMethodInformationToFileAsync( token, restorer, config.PackageID, config.PackageVersion, config.InspectFilePath, methodOrNull );
+         }
+         else
+         {
+            await Console.Error.WriteLineAsync( "Could not find suitable method to execute as entrypoint." );
          }
 
          return retVal;
@@ -94,15 +98,27 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
       }
 
       private static async Task WriteMethodInformationToFileAsync(
+         CancellationToken token,
+         BoundRestoreCommandUser restorer,
+         String packageID,
+         String packageVersion,
          String filePath,
          MethodInfo method
          )
       {
+         // Should be fast, since the lock file should already been cached by previous restore call via loadnugetassembly call
+         var packageNuGetVersion = ( await restorer
+            .RestoreIfNeeded( packageID, packageVersion, token ) )
+            .Targets.Single()
+            .Libraries
+            .First( l => String.Equals( l.Name, packageID, StringComparison.CurrentCultureIgnoreCase ) )
+            .Version;
          var returnType = method.ReturnParameter.ParameterType;
          using ( var writer = filePath.OpenStreamWriter() )
          {
             await writer.WriteAsync( JsonConvert.SerializeObject( new PackageInspectionResult()
             {
+               ExactPackageVersion = new VersionRange( minVersion: packageNuGetVersion, includeMinVersion: true, maxVersion: packageNuGetVersion, includeMaxVersion: true ).ToShortString(),
                MethodToken = method.MetadataToken,
                InputParameters = method.GetParameters()
                   .Select( p => p.ParameterType )

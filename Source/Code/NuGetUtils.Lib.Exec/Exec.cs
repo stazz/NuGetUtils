@@ -70,7 +70,7 @@ namespace NuGetUtils.Lib.Exec
             if ( configuredEP == null )
             {
                suitableMethod = assembly.EntryPoint;
-               if ( suitableMethod != null && suitableMethod.IsSpecialName )
+               if ( ( suitableMethod?.Name?.Length ?? 0 ) > 2 && suitableMethod.IsSpecialName )
                {
                   // Synthetic Main method which actually wraps the async main method (e.g. "<Main>" -> "Main")
                   var actualName = suitableMethod.Name.Substring( 1, suitableMethod.Name.Length - 2 );
@@ -125,14 +125,21 @@ namespace NuGetUtils.Lib.Exec
 
       private MethodInfo SearchSuitableMethod()
       {
-         var entryPointTypeName = this._entryPointTypeName;
          var assembly = this._assembly;
-         return ( entryPointTypeName.IsNullOrEmpty() ? assembly.GetTypes() : ( assembly.GetType( entryPointTypeName, false, false )?.Singleton() ?? assembly.GetTypes() ) )
-            .Select( t => t.GetTypeInfo() )
+         IEnumerable<TypeInfo> GetAllSuitableAssemblyTypes()
+         {
+            // By default, filter out all nested types (and interfaces)
+            return assembly.GetTypes()
+               .Select( t => t.GetTypeInfo() )
+               .Where( t => !t.IsInterface && t.DeclaringType == null );
+         }
+         var entryPointTypeName = this._entryPointTypeName;
+         var suitableType = ( entryPointTypeName.IsNullOrEmpty() ? GetAllSuitableAssemblyTypes() : ( assembly.GetType( entryPointTypeName, false, false )?.GetTypeInfo()?.Singleton() ?? GetAllSuitableAssemblyTypes() ) )
             .Where( t => t.DeclaredMethods.Any( m => m.IsStatic ) )
-            .Select( t => this.SearchSuitableMethod( t ) )
-            .Where( m => m != null )
-            .FirstOrDefault();
+            .DefaultIfMoreThan1();
+         return suitableType == null ?
+            null :
+            this.SearchSuitableMethod( suitableType );
       }
 
       private MethodInfo SearchSuitableMethod(
@@ -154,16 +161,17 @@ namespace NuGetUtils.Lib.Exec
                .ToHashSet()
 #endif
                ;
-            suitableMethods = type.DeclaredMethods.OrderBy( m => props.Contains( m ) ); // This will order in such way that false (not related to property) comes first
+            suitableMethods = type.DeclaredMethods.Where( m => !props.Contains( m ) ); //.OrderBy( m => props.Contains( m ) ); // This will order in such way that false (not related to property) comes first
          }
          else
          {
-            suitableMethods = type.GetDeclaredMethod( entryPointMethodName ).Singleton();
+            suitableMethods = type.DeclaredMethods.Where( m => String.Equals( m.Name, entryPointMethodName ) );
          }
 
+         // MethodAttributes.PrivateScope is known as CompilerControlled in ECMA-335, so filter out those methods.
          return suitableMethods
-            .Where( m => m.IsStatic )
-            .FirstOrDefault();
+            .Where( m => ( m.Attributes & MethodAttributes.MemberAccessMask ) != MethodAttributes.PrivateScope && m.IsStatic )
+            .DefaultIfMoreThan1();
       }
 
       private IEnumerable<MethodInfo> GetPropertyMethods(
@@ -488,7 +496,7 @@ public static partial class E_NuGetUtils
 #endif
          ) )
 #if NET46
-      using ( new UsingHelper( () => { try { AppDomain.Unload( appDomain ); } catch { } } ) )
+      using ( new UsingHelper( () => { if ( appDomain != null ) { try { AppDomain.Unload( appDomain ); } catch { } } } ) )
 #endif
       {
          var packageID = configuration.PackageID;
@@ -600,3 +608,32 @@ public static partial class E_NuGetUtils
    }
 }
 
+public static partial class E_NuGetUtils
+{
+   // TODO move to UtilPack
+
+   internal static T DefaultIfMoreThan1<T>(
+      this IEnumerable<T> enumerable,
+      T defaultValue = default
+      )
+   {
+      return enumerable.DefaultIfMoreThan(
+         arr => arr[0],
+         maxLimit: 1,
+         defaultValue: defaultValue
+         );
+   }
+
+   internal static T DefaultIfMoreThan<T>(
+      this IEnumerable<T> enumerable,
+      Func<T[], T> transformWhenOK,
+      Int32 maxLimit = 1,
+      T defaultValue = default
+      )
+   {
+      var array = enumerable.Take( maxLimit + 1 ).ToArray();
+      return array.Length > maxLimit ?
+         defaultValue :
+         transformWhenOK( array );
+   }
+}

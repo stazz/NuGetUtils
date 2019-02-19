@@ -40,7 +40,7 @@ namespace NuGetUtils.Lib.Tool.Agnostic
       /// <summary>
       /// Use this string (<c>-</c>) to mark that the file which is being read, or written to, is standard input, or output, respectively.
       /// </summary>
-      public const String STANDARD_INPUT_OUR_OUTPUT_MARKER = "=";
+      public const String STANDARD_INPUT_OUR_OUTPUT_MARKER = "-";
 
       /// <inheritdoc />
       public String ConfigurationFileLocation { get; set; }

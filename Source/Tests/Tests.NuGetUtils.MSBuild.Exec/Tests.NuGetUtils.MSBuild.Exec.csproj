@@ -10,16 +10,35 @@
     <TreatSpecificWarningsAsErrors />
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <LangVersion>latest</LangVersion>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
+  <!--<ItemDefinitionGroup>
+    <PackageReference>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <ProjectReference>
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemDefinitionGroup> -->
+
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.4.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
+
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548" />
+    <!-- Microsoft.NET.Test.Sdk depends on Microsoft.TestPlatform.TestHost, which depends on Newtonsoft.Json 9.0.1. Let's add explicit reference so that newer version would overwrite. -->
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Code\NuGetUtils.MSBuild.Exec\NuGetUtils.MSBuild.Exec.csproj" />
+    <ProjectReference Include="..\..\NuGetUtils.MSBuild.Exec\Discover\NuGetUtils.MSBuild.Exec.Discover.csproj" />
+    <ProjectReference Include="..\..\NuGetUtils.MSBuild.Exec\Inspect\NuGetUtils.MSBuild.Exec.Inspect.csproj" />
+    <ProjectReference Include="..\..\NuGetUtils.MSBuild.Exec\Perform\NuGetUtils.MSBuild.Exec.Perform.csproj" />
   </ItemGroup>
+
 
 </Project>

@@ -269,7 +269,7 @@ namespace NuGetUtils.MSBuild.Exec
       }
    }
 
-   public sealed class TypeGenerationResult
+   internal sealed class TypeGenerationResult
    {
       public TypeGenerationResult(
          Type generatedType,

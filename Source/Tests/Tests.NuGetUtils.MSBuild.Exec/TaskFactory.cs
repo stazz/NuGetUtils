@@ -15,9 +15,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NuGetUtils.MSBuild.Exec;
 using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Tests.NuGetUtils.MSBuild.Exec
 {
+   [TestClass]
+   public class TaskFactoryTests
+   {
+      [ClassInitialize]
+      public static void SetUpOtherProcesses(
+         TestContext unused // Must be present, otherwise exception is thrown indicating wrong method signature.
+         )
+      {
+         // When running non-self-contained processes via dotnet, we must make sure that .runtimeconfig.json file is present
+         // Having projects as references does not do that, so we have to do it other way.
+         // One such way is just simply copy the .runtimeconfig.json file of this project, and rename as appropriate
+         var thisAssemblyPath = Path.GetFullPath( new Uri( typeof( TaskFactoryTests ).GetTypeInfo().Assembly.CodeBase ).LocalPath );
+         var thisAssemblyDirectory = Path.GetDirectoryName( thisAssemblyPath );
+         var thisAssemblyRuntimeConfig = Path.ChangeExtension( thisAssemblyPath, ".runtimeconfig.json" );
+         foreach ( var execName in new[] { "Discover", "Inspect", "Perform" } )
+         {
+            File.Copy( thisAssemblyRuntimeConfig, Path.Combine( thisAssemblyDirectory, "NuGetUtils.MSBuild.Exec." + execName + ".runtimeconfig.json" ), true );
+         }
+      }
 
+      [TestMethod]
+      public void TestSimpleUseCase()
+      {
+         //global::NuGetUtils.MSBuild.Exec.Discover.Program.Main( new[] { "/ConfigurationFileLocation=-" } ).GetAwaiter().GetResult();
+
+
+         Assert.IsTrue( new NuGetExecutionTaskFactory().Initialize(
+            "",
+            null,
+            new XElement( "TaskBody",
+               new XElement( "PackageID", "UtilPack" ),
+               new XElement( "PackageVersion", "1.7.2" )
+               ).ToString(),
+            null
+            ) );
+      }
+   }
 }

@@ -106,7 +106,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
                errors.Add( "NMSBT002" );
             }
          }
-         else if ( !packageIDIsSelf )
+         else if ( packageIDIsSelf )
          {
             packageID = null;
             errors.Add( "NMSBT008" );
@@ -117,7 +117,10 @@ namespace NuGetUtils.MSBuild.Exec.Discover
          {
 
             packageVersion = this._packageVersion;
-            if ( ( String.IsNullOrEmpty( packageVersion ) && packageIDIsSelf ) || ( packageIDIsSelf = String.Equals( packageVersion, SELF, StringComparison.OrdinalIgnoreCase ) ) )
+            if (
+               ( String.IsNullOrEmpty( packageVersion ) && packageIDIsSelf )
+               || String.Equals( packageVersion, SELF, StringComparison.OrdinalIgnoreCase )
+               )
             {
                // Instead of floating version, we need to deduce our version
                NuGetVersion deducedVersion = null;
@@ -154,7 +157,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
             SDKPackageID = sdkPackageID,
             SDKPackageVersion = sdkPackageVErsion,
             PackageID = packageID,
-            PackageVersion = packageID,
+            PackageVersion = packageVersion,
             Errors = errors.ToArray()
          };
       }

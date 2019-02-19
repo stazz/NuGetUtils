@@ -22,17 +22,24 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UtilPack;
 
 namespace NuGetUtils.MSBuild.Exec
 {
    public sealed class TaskProxy
    {
       private readonly ImmutableDictionary<String, TaskPropertyHolder> _propertyInfos;
+      private readonly EnvironmentValue _environment;
+      private readonly InspectionValue _entrypoint;
 
-      public TaskProxy(
+      internal TaskProxy(
+         EnvironmentValue environment,
+         InspectionValue entrypoint,
          TypeGenerationResult generationResult
          )
       {
+         this._environment = ArgumentValidator.ValidateNotNull( nameof( environment ), environment );
+         this._entrypoint = ArgumentValidator.ValidateNotNull( nameof( entrypoint ), entrypoint );
          this._propertyInfos = generationResult
             .Properties
             .ToImmutableDictionary( p => p.Name, p => new TaskPropertyHolder() );

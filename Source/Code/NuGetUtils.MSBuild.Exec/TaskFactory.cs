@@ -32,14 +32,13 @@ using UtilPack;
 
 namespace NuGetUtils.MSBuild.Exec
 {
-   public sealed class TaskFactory : ITaskFactory
+   public sealed class NuGetExecutionTaskFactory : ITaskFactory
    {
       private const String PACKAGE_ID = "PackageID";
       private const String PACKAGE_ID_IS_SELF = "PackageIDIsSelf";
       private const String PACKAGE_VERSION = "PackageVersion";
       private const String ASSEMBLY_PATH = "AssemblyPath";
       private const String NUGET_FW = "NuGetFramework";
-      private const String NUGET_FW_VERSION = "NuGetFrameworkVersion";
       private const String NUGET_FW_PACKAGE_ID = "NuGetFrameworkPackageID";
       private const String NUGET_FW_PACKAGE_VERSION = "NuGetFrameworkPackageVersion";
       private const String NUGET_RID = "NuGetPlatformRID";
@@ -54,14 +53,6 @@ namespace NuGetUtils.MSBuild.Exec
 
       private InitializationResult _initResult;
 
-      public TaskFactory()
-      {
-
-      }
-
-      public String FactoryName => throw new NotImplementedException();
-
-
       public Boolean Initialize(
          String taskName,
          IDictionary<String, TaskPropertyInfo> parameterGroup,
@@ -69,29 +60,51 @@ namespace NuGetUtils.MSBuild.Exec
          IBuildEngine taskFactoryLoggingHost
          )
       {
-         var taskBodyElement = XElement.Parse( taskBody );
+         InitializationResult initResult = null;
+         try
+         {
+            var taskBodyElement = XElement.Parse( taskBody );
 
-         var initResult = InitializeAsync(
-            new InitializationArgs(
-               taskBodyElement.ElementAnyNS( NUGET_FW )?.Value,
-               taskBodyElement.ElementAnyNS( NUGET_RID )?.Value,
-               taskBodyElement.ElementAnyNS( NUGET_FW_PACKAGE_ID )?.Value,
-               taskBodyElement.ElementAnyNS( NUGET_FW_PACKAGE_VERSION )?.Value,
-               false,
-               taskBodyElement.ElementAnyNS( NUGET_CONFIG_FILE )?.Value,
-               taskBodyElement.ElementAnyNS( PACKAGE_ID )?.Value,
-               taskBodyElement.ElementAnyNS( PACKAGE_VERSION )?.Value,
-               taskBodyElement.ElementAnyNS( PACKAGE_ID_IS_SELF )?.Value?.ParseAsBooleanSafe() ?? false,
-               taskBodyElement.ElementAnyNS( ASSEMBLY_PATH )?.Value,
-               taskName,
-               null,
-               taskFactoryLoggingHost?.ProjectFileOfTaskNode
-               )
-            ).GetAwaiter().GetResult();
+            initResult = InitializeAsync(
+               new InitializationArgs(
+                  taskBodyElement.ElementAnyNS( NUGET_FW )?.Value,
+                  taskBodyElement.ElementAnyNS( NUGET_RID )?.Value,
+                  taskBodyElement.ElementAnyNS( NUGET_FW_PACKAGE_ID )?.Value,
+                  taskBodyElement.ElementAnyNS( NUGET_FW_PACKAGE_VERSION )?.Value,
+                  false,
+                  taskBodyElement.ElementAnyNS( NUGET_CONFIG_FILE )?.Value,
+                  taskBodyElement.ElementAnyNS( PACKAGE_ID )?.Value,
+                  taskBodyElement.ElementAnyNS( PACKAGE_VERSION )?.Value,
+                  taskBodyElement.ElementAnyNS( PACKAGE_ID_IS_SELF )?.Value?.ParseAsBooleanSafe() ?? false,
+                  taskBodyElement.ElementAnyNS( ASSEMBLY_PATH )?.Value,
+                  taskName,
+                  null,
+                  taskFactoryLoggingHost
+                  )
+               ).GetAwaiter().GetResult();
+         }
+         catch ( Exception exc )
+         {
+            taskFactoryLoggingHost?.LogErrorEvent( new BuildErrorEventArgs(
+               "subcat",
+               "code",
+               "file",
+               0,
+               0,
+               0,
+               0,
+               $"Internal error: {exc.Message}",
+               "helpKeyword",
+               "senderName"
+               ) );
+         }
+
          this._initResult = initResult;
 
          return initResult != null;
       }
+
+      public String FactoryName => nameof( NuGetExecutionTaskFactory );
 
       public TaskPropertyInfo[] GetTaskParameters()
       {
@@ -107,13 +120,15 @@ namespace NuGetUtils.MSBuild.Exec
 
       public ITask CreateTask( IBuildEngine taskFactoryLoggingHost )
       {
-         return this._initResult?.TaskInstance;
+         return this._initResult?.CreateTaskInstance();
       }
 
       private static async Task<InitializationResult> InitializeAsync(
          InitializationArgs args
          )
       {
+         var be = args.BuildEngine;
+         var projectFilePath = be?.ProjectFileOfTaskNode;
          var env = await _cache.DetectEnvironmentAsync( new EnvironmentKeyInfo(
             new EnvironmentKey(
                args.Framework,
@@ -121,16 +136,20 @@ namespace NuGetUtils.MSBuild.Exec
                args.SDKPackageID,
                args.SDKPackageVersion,
                args.SettingsLocation,
-               args.PackageIDIsSelf ? args.ProjectFilePath : args.PackageID,
+               args.PackageIDIsSelf ? projectFilePath : args.PackageID,
                args.PackageVersion
             ),
             args.PackageIDIsSelf,
-            args.ProjectFilePath
+            projectFilePath
             ) );
          InitializationResult initializationResult = null;
          if ( env.Errors.Length > 0 )
          {
-            // TODO log based on error codes
+            if ( be != null )
+            {
+               // TODO log based on error codes
+
+            }
             initializationResult = null;
          }
          else
@@ -154,9 +173,9 @@ namespace NuGetUtils.MSBuild.Exec
 
             initializationResult = new InitializationResult(
                typeGenResult,
-               (ITask) typeGenResult.GeneratedType.GetTypeInfo().DeclaredConstructors.First().Invoke( new[]
+               () => (ITask) typeGenResult.GeneratedType.GetTypeInfo().DeclaredConstructors.First().Invoke( new[]
                {
-                  new TaskProxy(typeGenResult)
+                  new TaskProxy( env, inspection, typeGenResult)
                } )
                );
          }
@@ -180,7 +199,7 @@ namespace NuGetUtils.MSBuild.Exec
             String assemblyPath,
             String typeName,
             String methodName,
-            String projectFilePath
+            IBuildEngine buildEngine
             )
          {
             this.Framework = framework;
@@ -195,7 +214,7 @@ namespace NuGetUtils.MSBuild.Exec
             this.AssemblyPath = assemblyPath;
             this.TypeName = typeName;
             this.MethodName = methodName;
-            this.ProjectFilePath = projectFilePath;
+            this.BuildEngine = buildEngine;
          }
 
          public String Framework { get; }
@@ -210,23 +229,23 @@ namespace NuGetUtils.MSBuild.Exec
          public String AssemblyPath { get; }
          public String TypeName { get; }
          public String MethodName { get; }
-         public String ProjectFilePath { get; }
+         public IBuildEngine BuildEngine { get; }
       }
 
       private sealed class InitializationResult
       {
          public InitializationResult(
             TypeGenerationResult typeGenerationResult,
-            ITask taskInstance
+            Func<ITask> createTaskInstance
             )
          {
             this.TypeGenerationResult = ArgumentValidator.ValidateNotNull( nameof( typeGenerationResult ), typeGenerationResult );
-            this.TaskInstance = ArgumentValidator.ValidateNotNull( nameof( taskInstance ), taskInstance );
+            this.CreateTaskInstance = ArgumentValidator.ValidateNotNull( nameof( createTaskInstance ), createTaskInstance );
          }
 
          public TypeGenerationResult TypeGenerationResult { get; }
 
-         public ITask TaskInstance { get; }
+         public Func<ITask> CreateTaskInstance { get; }
       }
    }
 

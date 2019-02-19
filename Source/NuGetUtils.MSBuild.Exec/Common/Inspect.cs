@@ -32,6 +32,7 @@ namespace NuGetUtils.MSBuild.Exec.Common
       public Int32 MethodToken { get; set; }
       public ExecutableParameterInfo[] InputParameters { get; set; }
       public ExecutableParameterInfo[] OutputParameters { get; set; }
+      public String ExactPackageVersion { get; set; }
    }
 
    public sealed class ExecutableParameterInfo

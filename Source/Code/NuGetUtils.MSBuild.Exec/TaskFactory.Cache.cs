@@ -41,7 +41,7 @@ namespace NuGetUtils.MSBuild.Exec
 
       public NuGetExecutionCache()
       {
-         this._thisAssemblyDirectory = Path.GetFullPath( new Uri( this.GetType().GetTypeInfo().Assembly.CodeBase ).LocalPath );
+         this._thisAssemblyDirectory = Path.GetDirectoryName( Path.GetFullPath( new Uri( this.GetType().GetTypeInfo().Assembly.CodeBase ).LocalPath ) );
          this._environments = new ConcurrentDictionary<EnvironmentKeyInfo, AsyncLazy<EnvironmentValue>>( ComparerFromFunctions.NewEqualityComparer<EnvironmentKeyInfo>(
             ( xInfo, yInfo ) =>
             {
@@ -154,23 +154,36 @@ namespace NuGetUtils.MSBuild.Exec
          TInput input
          )
       {
-         assemblyName = Path.Combine( this._thisAssemblyDirectory, assemblyName );
+         assemblyName = Path.GetFullPath( Path.Combine( this._thisAssemblyDirectory, assemblyName ) + "." +
+#if NET46
+            "exe"
+#else
+            "dll"
+#endif
+            );
+
+         // If we don't check this here, on .NET Core we will get rather unhelpful "pipe has been closed" error message when writing to stdin later.
+         if ( !File.Exists( assemblyName ) )
+         {
+            throw new InvalidOperationException( $"The target executable process \"{assemblyName}\" does not exist." );
+         }
+
          var p = new Process()
          {
             StartInfo = new ProcessStartInfo()
             {
                FileName =
 #if NET46
-               assemblyName + ".exe"
+               assemblyName
 #else
                "dotnet"
 #endif
                ,
                Arguments =
 #if !NET46
-               assemblyName + ".dll " +
+               assemblyName + " " +
 #endif
-               $"/{nameof( ConfigurationConfiguration.ConfigurationFileLocation )}:-",
+               $"/{nameof( ConfigurationConfiguration.ConfigurationFileLocation )}={DefaultConfigurationConfiguration.STANDARD_INPUT_OUR_OUTPUT_MARKER}",
                UseShellExecute = false,
                CreateNoWindow = true,
                RedirectStandardOutput = true,
@@ -201,9 +214,21 @@ namespace NuGetUtils.MSBuild.Exec
          p.BeginErrorReadLine();
 
          // Pass serialized configuration via stdin
+         var stdinSuccess = false;
          using ( var stdin = p.StandardInput )
          {
-            await stdin.WriteAsync( JsonConvert.SerializeObject( input ) );
+            try
+            {
+               await stdin.WriteAsync( JsonConvert.SerializeObject( input, Formatting.None, new JsonSerializerSettings()
+               {
+                  NullValueHandling = NullValueHandling.Ignore
+               } ) );
+               stdinSuccess = true;
+            }
+            catch
+            {
+               // Ignore
+            }
          }
 
 
@@ -222,8 +247,16 @@ namespace NuGetUtils.MSBuild.Exec
             await Task.Delay( 50 );
          }
 
-         return stderr.Length > 0 ?
-            new EitherOr<TOutput, String>( stderr.ToString() ) :
+         String GetErrorString()
+         {
+            var errorString = stderr.ToString();
+            return String.IsNullOrEmpty( errorString ) ?
+               ( p.ExitCode == 0 ? "Unspecified error" : $"Non-zero return code of {assemblyName}" ) :
+               errorString;
+         }
+
+         return stderr.Length > 0 || !stdinSuccess || p.ExitCode != 0 ?
+            new EitherOr<TOutput, String>( GetErrorString() ) :
             JsonConvert.DeserializeObject<TOutput>( stdout.ToString() );
       }
    }
@@ -273,7 +306,7 @@ namespace NuGetUtils.MSBuild.Exec
       {
          this.Key = ArgumentValidator.ValidateNotNull( nameof( key ), key );
          this.PackageIDIsProjectPath = packageIDIsProjectPath;
-         this.ProjectFilePath = packageIDIsProjectPath ? key.PackageID : ArgumentValidator.ValidateNotEmpty( nameof( projectFilePath ), projectFilePath );
+         this.ProjectFilePath = packageIDIsProjectPath ? key.PackageID : projectFilePath.DefaultIfNullOrEmpty();
       }
 
       public EnvironmentKey Key { get; }
@@ -289,12 +322,13 @@ namespace NuGetUtils.MSBuild.Exec
          EnvironmentInspectionResult result
          )
       {
-         this.ThisFramework = ArgumentValidator.ValidateNotEmpty( nameof( EnvironmentInspectionResult.ThisFramework ), result.ThisFramework );
-         this.ThisRuntimeID = ArgumentValidator.ValidateNotEmpty( nameof( EnvironmentInspectionResult.ThisRuntimeID ), result.ThisRuntimeID );
-         this.PackageID = ArgumentValidator.ValidateNotEmpty( nameof( EnvironmentInspectionResult.PackageID ), result.PackageID );
-         this.PackageVersion = ArgumentValidator.ValidateNotEmpty( nameof( EnvironmentInspectionResult.PackageVersion ), result.PackageVersion );
-         this.SDKPackageID = ArgumentValidator.ValidateNotEmpty( nameof( EnvironmentInspectionResult.SDKPackageID ), result.SDKPackageID );
-         this.SDKPackageVersion = ArgumentValidator.ValidateNotEmpty( nameof( EnvironmentInspectionResult.SDKPackageVersion ), result.SDKPackageVersion );
+         var hasErrors = result.Errors.Length > 0;
+         this.ThisFramework = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.ThisFramework ), result.ThisFramework );
+         this.ThisRuntimeID = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.ThisRuntimeID ), result.ThisRuntimeID );
+         this.PackageID = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.PackageID ), result.PackageID );
+         this.PackageVersion = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.PackageVersion ), result.PackageVersion );
+         this.SDKPackageID = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.SDKPackageID ), result.SDKPackageID );
+         this.SDKPackageVersion = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.SDKPackageVersion ), result.SDKPackageVersion );
          this.Errors = result.Errors?.ToImmutableArray() ?? ImmutableArray<String>.Empty;
       }
 
@@ -305,6 +339,11 @@ namespace NuGetUtils.MSBuild.Exec
       public String PackageID { get; }
       public String PackageVersion { get; }
       public ImmutableArray<String> Errors { get; }
+
+      private static String NotEmptyIfNoErrors( Boolean hasErrors, String paramName, String paramValue )
+      {
+         return hasErrors ? paramValue : ArgumentValidator.ValidateNotEmpty( paramName, paramValue );
+      }
    }
 
 
@@ -354,11 +393,13 @@ namespace NuGetUtils.MSBuild.Exec
          }
 
          this.MethodToken = methodToken;
+         this.ExactPackageVersion = ArgumentValidator.ValidateNotEmpty( nameof( PackageInspectionResult.ExactPackageVersion ), result.ExactPackageVersion );
          this.InputParameters = result.InputParameters.Select( p => new InspectionExecutableParameterInfo( p ) ).ToImmutableArray();
          this.OutputParameters = result.OutputParameters.Select( p => new InspectionExecutableParameterInfo( p ) ).ToImmutableArray();
       }
 
       public Int32 MethodToken { get; }
+      public String ExactPackageVersion { get; }
       public ImmutableArray<InspectionExecutableParameterInfo> InputParameters { get; }
       public ImmutableArray<InspectionExecutableParameterInfo> OutputParameters { get; }
    }
