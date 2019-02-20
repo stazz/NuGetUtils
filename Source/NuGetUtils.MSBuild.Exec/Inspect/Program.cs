@@ -125,14 +125,14 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
                   .Where( t => !NuGetExecutionUtils.SpecialTypesForMethodArguments.Contains( t ) )
                   .SelectMany( t => t.GetRuntimeProperties() )
                   .Distinct()
-                  .IncludeTaskProperties()
+                  .IncludeTaskProperties( false )
                   .Select( p => p.CreatePropertyInfoObject() )
                   .ToArray(),
                OutputParameters = typeof( void ).Equals( returnType ) ?
                   Empty<ExecutableParameterInfo>.Array :
                   returnType
                      .GetRuntimeProperties()
-                     .IncludeTaskProperties()
+                     .IncludeTaskProperties( true )
                      .Select( p => p.CreatePropertyInfoObject() )
                      .ToArray()
             } ) );
@@ -146,11 +146,12 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
    internal static class NuGetUtilsExtensions
    {
       public static IEnumerable<PropertyInfo> IncludeTaskProperties(
-         this IEnumerable<PropertyInfo> properties
+         this IEnumerable<PropertyInfo> properties,
+         Boolean isOutput
          )
       {
-         // Return all non-static properties which have both getter and setter
-         return properties.Where( p => p.GetMethod != null && p.SetMethod != null && !p.GetMethod.IsStatic );
+         // Return all non-static properties which have both getter and setter, except output parameters are ok to be getter-only
+         return properties.Where( p => p.GetMethod != null && ( isOutput || p.SetMethod != null ) && !p.GetMethod.IsStatic );
       }
 
       public static ExecutableParameterInfo CreatePropertyInfoObject(

@@ -47,7 +47,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Exec.Dis
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Tool.Agnostic", "Code\NuGetUtils.Lib.Tool.Agnostic\NuGetUtils.Lib.Tool.Agnostic.csproj", "{99CA0168-74E3-4BA0-A2F2-165E3FE7B7A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.NuGetUtils.MSBuild.Exec", "Tests\Tests.NuGetUtils.MSBuild.Exec\Tests.NuGetUtils.MSBuild.Exec.csproj", "{CBF89A31-3C47-433D-A6B6-B07F5F046984}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.NuGetUtils.MSBuild.Exec", "Tests\Tests.NuGetUtils.MSBuild.Exec\Tests.NuGetUtils.MSBuild.Exec.csproj", "{CBF89A31-3C47-433D-A6B6-B07F5F046984}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPackage", "NuGetUtils.MSBuild.Exec\TestPackage\NuGetUtils.MSBuild.Exec.TestPackage.csproj", "{5209985E-41E0-4391-A09B-DB597C8EE4A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -147,6 +149,10 @@ Global
 		{CBF89A31-3C47-433D-A6B6-B07F5F046984}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBF89A31-3C47-433D-A6B6-B07F5F046984}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBF89A31-3C47-433D-A6B6-B07F5F046984}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5209985E-41E0-4391-A09B-DB597C8EE4A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5209985E-41E0-4391-A09B-DB597C8EE4A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5209985E-41E0-4391-A09B-DB597C8EE4A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5209985E-41E0-4391-A09B-DB597C8EE4A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

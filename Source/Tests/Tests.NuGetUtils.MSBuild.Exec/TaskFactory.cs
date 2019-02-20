@@ -51,13 +51,15 @@ namespace Tests.NuGetUtils.MSBuild.Exec
       {
          //global::NuGetUtils.MSBuild.Exec.Discover.Program.Main( new[] { "/ConfigurationFileLocation=-" } ).GetAwaiter().GetResult();
 
-
-         Assert.IsTrue( new NuGetExecutionTaskFactory().Initialize(
-            "",
+         var factory = new NuGetExecutionTaskFactory();
+         Assert.IsTrue( factory.Initialize(
+            null,
             null,
             new XElement( "TaskBody",
-               new XElement( "PackageID", "UtilPack" ),
-               new XElement( "PackageVersion", "1.7.2" )
+               new XElement( "PackageID", "NuGetUtils.MSBuild.Exec.TestPackage" ),
+               new XElement( "PackageVersion", "1.0.0" ),
+               new XElement( "EntryPointTypeName", "NuGetUtils.MSBuild.Exec.TestPackage.EntryPoints" ),
+               new XElement( "EntryPointMethodName", "Echo" )
                ).ToString(),
             null
             ) );

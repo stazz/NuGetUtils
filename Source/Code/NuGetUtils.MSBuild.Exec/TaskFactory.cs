@@ -45,7 +45,8 @@ namespace NuGetUtils.MSBuild.Exec
       private const String NUGET_RID_CATALOG_PACKAGE_ID = "NuGetPlatformRIDCatalogPackageID";
       private const String NUGET_CONFIG_FILE = "NuGetConfigurationFile";
       private const String COPY_TO_TEMPORARY_FOlDER_BEFORE_LOAD = "CopyToFolderBeforeLoad";
-      private const String TASK_NAME = "TaskName";
+      private const String TASK_NAME = "EntryPointTypeName";
+      private const String TASK_METHOD_NAME = "EntryPointMethodName";
       private const String UNMANAGED_ASSEMBLIES_MAP = "UnmanagedAssemblyReferenceMap";
 
       // Static in order to share state between task factory usage in different build files.
@@ -77,8 +78,8 @@ namespace NuGetUtils.MSBuild.Exec
                   taskBodyElement.ElementAnyNS( PACKAGE_VERSION )?.Value,
                   taskBodyElement.ElementAnyNS( PACKAGE_ID_IS_SELF )?.Value?.ParseAsBooleanSafe() ?? false,
                   taskBodyElement.ElementAnyNS( ASSEMBLY_PATH )?.Value,
-                  taskName,
-                  null,
+                  ( taskBodyElement.ElementAnyNS( TASK_NAME )?.Value ).DefaultIfNullOrEmpty( taskName ),
+                  taskBodyElement.ElementAnyNS( TASK_METHOD_NAME )?.Value,
                   taskFactoryLoggingHost
                   )
                ).GetAwaiter().GetResult();
