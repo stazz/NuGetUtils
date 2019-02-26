@@ -34,14 +34,14 @@ namespace NuGetUtils.MSBuild.Exec
 {
    internal sealed class NuGetExecutionCache
    {
-      private readonly String _thisAssemblyDirectory;
+      private readonly NuGetUtilsExecProcessMonitor _processMonitor;
 
       private readonly ConcurrentDictionary<EnvironmentKeyInfo, AsyncLazy<EnvironmentValue>> _environments;
       private readonly ConcurrentDictionary<InspectionKey, AsyncLazy<InspectionValue>> _inspections;
 
       public NuGetExecutionCache()
       {
-         this._thisAssemblyDirectory = Path.GetDirectoryName( Path.GetFullPath( new Uri( this.GetType().GetTypeInfo().Assembly.CodeBase ).LocalPath ) );
+         this._processMonitor = new NuGetUtilsExecProcessMonitor();
          this._environments = new ConcurrentDictionary<EnvironmentKeyInfo, AsyncLazy<EnvironmentValue>>( ComparerFromFunctions.NewEqualityComparer<EnvironmentKeyInfo>(
             ( xInfo, yInfo ) =>
             {
@@ -82,7 +82,7 @@ namespace NuGetUtils.MSBuild.Exec
             var key = theKeyInfo.Key;
             var packageIDIsSelf = theKeyInfo.PackageIDIsProjectPath;
 
-            var env = await this.CallProcessAndGetResultAsync<DiscoverConfiguration<String>, EnvironmentInspectionResult>(
+            var env = await this._processMonitor.CallProcessAndGetResultAsync<DiscoverConfiguration<String>, EnvironmentInspectionResult>(
                "NuGetUtils.MSBuild.Exec.Discover",
                new DiscoverConfiguration<String>()
                {
@@ -118,7 +118,7 @@ namespace NuGetUtils.MSBuild.Exec
          return await this._inspections.GetOrAdd( key, theKey => new UtilPack.AsyncLazy<InspectionValue>( async () =>
          {
 
-            var env = await this.CallProcessAndGetResultAsync<InspectConfiguration<String>, PackageInspectionResult>(
+            var env = await this._processMonitor.CallProcessAndGetResultAsync<InspectConfiguration<String>, PackageInspectionResult>(
                "NuGetUtils.MSBuild.Exec.Inspect",
                new InspectConfiguration<String>()
                {
@@ -148,123 +148,13 @@ namespace NuGetUtils.MSBuild.Exec
             return new InspectionValue( result );
          } ) );
       }
-
-      private async Task<EitherOr<TOutput, String>> CallProcessAndGetResultAsync<TInput, TOutput>(
-         String assemblyName,
-         TInput input
-         )
-      {
-         assemblyName = Path.GetFullPath( Path.Combine( this._thisAssemblyDirectory, assemblyName ) + "." +
-#if NET46
-            "exe"
-#else
-            "dll"
-#endif
-            );
-
-         // If we don't check this here, on .NET Core we will get rather unhelpful "pipe has been closed" error message when writing to stdin later.
-         if ( !File.Exists( assemblyName ) )
-         {
-            throw new InvalidOperationException( $"The target executable process \"{assemblyName}\" does not exist." );
-         }
-
-         var p = new Process()
-         {
-            StartInfo = new ProcessStartInfo()
-            {
-               FileName =
-#if NET46
-               assemblyName
-#else
-               "dotnet"
-#endif
-               ,
-               Arguments =
-#if !NET46
-               assemblyName + " " +
-#endif
-               $"/{nameof( ConfigurationConfiguration.ConfigurationFileLocation )}={DefaultConfigurationConfiguration.STANDARD_INPUT_OUR_OUTPUT_MARKER}",
-               UseShellExecute = false,
-               CreateNoWindow = true,
-               RedirectStandardOutput = true,
-               RedirectStandardError = true,
-               RedirectStandardInput = true,
-            }
-         };
-
-         var stdout = new StringBuilder();
-         p.OutputDataReceived += ( sender, args ) =>
-         {
-            if ( args.Data is String line ) // Will be null on process shutdown
-            {
-               stdout.Append( line );
-            }
-         };
-         var stderr = new StringBuilder();
-         p.ErrorDataReceived += ( sender, args ) =>
-         {
-            if ( args.Data is String line ) // Will be null on process shutdown
-            {
-               stderr.Append( line );
-            }
-         };
-
-         p.Start();
-         p.BeginOutputReadLine();
-         p.BeginErrorReadLine();
-
-         // Pass serialized configuration via stdin
-         var stdinSuccess = false;
-         using ( var stdin = p.StandardInput )
-         {
-            try
-            {
-               await stdin.WriteAsync( JsonConvert.SerializeObject( input, Formatting.None, new JsonSerializerSettings()
-               {
-                  NullValueHandling = NullValueHandling.Ignore
-               } ) );
-               stdinSuccess = true;
-            }
-            catch
-            {
-               // Ignore
-            }
-         }
-
-
-         while ( !p.WaitForExit( 0 ) )
-         {
-            await Task.Delay( 100 );
-         }
-
-         // Process.HasExited has following documentation:
-         // When standard output has been redirected to asynchronous event handlers, it is possible that output processing will
-         // not have completed when this property returns true. To ensure that asynchronous event handling has been completed,
-         // call the WaitForExit() overload that takes no parameter before checking HasExited.
-         p.WaitForExit();
-         while ( !p.HasExited )
-         {
-            await Task.Delay( 50 );
-         }
-
-         String GetErrorString()
-         {
-            var errorString = stderr.ToString();
-            return String.IsNullOrEmpty( errorString ) ?
-               ( p.ExitCode == 0 ? "Unspecified error" : $"Non-zero return code of {assemblyName}" ) :
-               errorString;
-         }
-
-         return stderr.Length > 0 || !stdinSuccess || p.ExitCode != 0 ?
-            new EitherOr<TOutput, String>( GetErrorString() ) :
-            JsonConvert.DeserializeObject<TOutput>( stdout.ToString() );
-      }
    }
 
    // When detecting NuGet environment, the result depends on (givenFramework, givenRuntimeID, givenSettingsLocation, (if packageIDIsSelf true then projectFilePath else givenPackageID), givenPackageVersion)
    // The result is (actualFramework, actualRuntimeID, actualPackageID, actualPackageVersion)
    // Package ID and version are path of the environment because if packageIDIsSelf is specified, we need to sort out the packageID and version ourselves
-   // Technically speaking, the environment could just be the (framework, runtime), however, to minimize the amount of process invocations, we detect package id and version along with the environment.
+   // Technically speaking, the environment does not depend on package id and version, however, to minimize the amount of process invocations, we detect package id and version along with the environment.
+   // During typical usage of this task factory by MSBuild tasks, all of these parameters are the same.
    internal sealed class EnvironmentKey
    {
       public EnvironmentKey(

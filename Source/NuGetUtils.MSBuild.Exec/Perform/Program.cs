@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 
 namespace NuGetUtils.MSBuild.Exec.Perform
 {
+   using TConfiguration = PerformConfiguration<LogLevel>;
+
    internal static class Program
    {
       public static Task<Int32> Main( String[] args )
@@ -34,12 +36,13 @@ namespace NuGetUtils.MSBuild.Exec.Perform
 
    }
 
-   internal sealed class NuGetProgram : NuGetRestoringProgram<DefaultNuGetExecutionConfiguration<LogLevel>, DefaultConfigurationConfiguration>
+
+   internal sealed class NuGetProgram : NuGetRestoringProgram<TConfiguration, DefaultConfigurationConfiguration>
    {
       internal const String EXEC_ARGS_SEPARATOR = "--";
 
       protected override async Task<Int32> UseRestorerAsync(
-         ConfigurationInformation<DefaultNuGetExecutionConfiguration<LogLevel>> info,
+         ConfigurationInformation<TConfiguration> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,
@@ -64,7 +67,7 @@ namespace NuGetUtils.MSBuild.Exec.Perform
       }
 
       protected override Boolean ValidateConfiguration(
-         ConfigurationInformation<DefaultNuGetExecutionConfiguration<LogLevel>> info
+         ConfigurationInformation<TConfiguration> info
          )
       {
          return info.Configuration.ValidateConfiguration();

@@ -17,6 +17,7 @@
  */
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NuGet.Common;
 using NuGetUtils.Lib.Exec;
 using NuGetUtils.Lib.Restore;
 using NuGetUtils.Lib.Tool;
@@ -33,6 +34,8 @@ using UtilPack;
 
 namespace NuGetUtils.MSBuild.Exec.Discover
 {
+   using TConfiguration = DiscoverConfiguration<LogLevel>;
+
    internal static class Program
    {
       public static Task<Int32> Main( String[] args )
@@ -40,12 +43,12 @@ namespace NuGetUtils.MSBuild.Exec.Discover
 
    }
 
-   internal sealed class NuGetProgram : NuGetRestoringProgram<DiscoverConfiguration, DefaultConfigurationConfiguration>
+   internal sealed class NuGetProgram : NuGetRestoringProgram<TConfiguration, DefaultConfigurationConfiguration>
    {
       internal const String EXEC_ARGS_SEPARATOR = "--";
 
       protected override Boolean ValidateConfiguration(
-         ConfigurationInformation<DiscoverConfiguration> info
+         ConfigurationInformation<TConfiguration> info
          )
       {
          return info.Configuration.ValidateDiscoverConfiguration()
@@ -53,7 +56,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
       }
 
       protected override async Task<Int32> UseRestorerAsync(
-         ConfigurationInformation<DiscoverConfiguration> info,
+         ConfigurationInformation<TConfiguration> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,

@@ -16,11 +16,16 @@
  * limitations under the License. 
  */
 using Microsoft.Build.Framework;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using NuGetUtils.MSBuild.Exec.Common;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
 
@@ -32,6 +37,9 @@ namespace NuGetUtils.MSBuild.Exec
       private readonly EnvironmentValue _environment;
       private readonly InspectionValue _entrypoint;
 
+      private readonly CancellationTokenSource _cancellationTokenSource;
+      private readonly NuGetUtilsExecProcessMonitor _processMonitor;
+
       internal TaskProxy(
          EnvironmentValue environment,
          InspectionValue entrypoint,
@@ -42,13 +50,14 @@ namespace NuGetUtils.MSBuild.Exec
          this._entrypoint = ArgumentValidator.ValidateNotNull( nameof( entrypoint ), entrypoint );
          this._propertyInfos = generationResult
             .Properties
-            .ToImmutableDictionary( p => p.Name, p => new TaskPropertyHolder() );
+            .ToImmutableDictionary( p => p.Name, p => new TaskPropertyHolder( p.Output ) );
+         this._cancellationTokenSource = new CancellationTokenSource();
       }
 
       // Called by generated task type
       public void Cancel()
       {
-         // TODO set semaphore
+         this._cancellationTokenSource.Cancel();
       }
 
       // Called by generated task type
@@ -75,12 +84,50 @@ namespace NuGetUtils.MSBuild.Exec
       // Called by generated task type
       public Boolean Execute( IBuildEngine be )
       {
-         throw new NotImplementedException();
+         return this.ExecuteAsync().GetAwaiter().GetResult();
+      }
+
+      private async Task<Boolean> ExecuteAsync()
+      {
          // Call process, deserialize result, set output properties.
+         var tempFileLocation = Path.Combine( Path.GetTempPath(), $"NuGetUtilsExec_" + Guid.NewGuid() );
+
+         var returnCode = await this._processMonitor.CallProcessAndStreamOutputAsync(
+            "NuGetUtils.MSBuild.Exec.Perform",
+            new PerformConfiguration<String>
+            {
+               ReturnValuePath = tempFileLocation,
+            },
+            this._cancellationTokenSource.Token,
+            TimeSpan.FromSeconds( 1 )
+            );
+         if ( returnCode.HasValue )
+         {
+            using ( var sReader = new StreamReader( File.Open( tempFileLocation, FileMode.Open, FileAccess.Read, FileShare.Read ), new UTF8Encoding( false, false ), false ) )
+            using ( var jReader = new JsonTextReader( sReader ) )
+            {
+               foreach ( var jProp in ( await JObject.LoadAsync( jReader ) )
+                  .Properties()
+                  .Where( p => this._propertyInfos.TryGetValue( p.Name, out var prop ) && prop.IsOutput )
+                  )
+               {
+                  var jValue = jProp.Value;
+                  this._propertyInfos[jProp.Name].Value = jProp.Value is JValue jPrimitive ? jPrimitive.Value?.ToString() : jValue.ToString();
+               }
+            }
+         }
+
+         return returnCode.HasValue && returnCode.Value == 0;
       }
 
       private sealed class TaskPropertyHolder
       {
+         public TaskPropertyHolder( Boolean isOutput )
+         {
+            this.IsOutput = isOutput;
+         }
+
+         public Boolean IsOutput { get; }
          public Object Value { get; set; }
       }
    }

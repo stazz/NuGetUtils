@@ -17,6 +17,7 @@
  */
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NuGet.Common;
 using NuGet.Versioning;
 using NuGetUtils.Lib.Exec;
 using NuGetUtils.Lib.Restore;
@@ -35,6 +36,8 @@ using UtilPack;
 
 namespace NuGetUtils.MSBuild.Exec.Inspect
 {
+   using TConfiguration = InspectConfiguration<LogLevel>;
+
    internal static class Program
    {
       public static Task<Int32> Main( String[] args )
@@ -42,12 +45,12 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
 
    }
 
-   internal sealed class NuGetProgram : NuGetRestoringProgram<InspectConfiguration, DefaultConfigurationConfiguration>
+   internal sealed class NuGetProgram : NuGetRestoringProgram<TConfiguration, DefaultConfigurationConfiguration>
    {
       internal const String EXEC_ARGS_SEPARATOR = "--";
 
       protected override Boolean ValidateConfiguration(
-         ConfigurationInformation<InspectConfiguration> info
+         ConfigurationInformation<TConfiguration> info
          )
       {
          return info.Configuration.ValidateInspectConfiguration()
@@ -55,7 +58,7 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
       }
 
       protected override async Task<Int32> UseRestorerAsync(
-         ConfigurationInformation<InspectConfiguration> info,
+         ConfigurationInformation<TConfiguration> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,
