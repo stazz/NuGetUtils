@@ -176,61 +176,12 @@ namespace NuGetUtils.MSBuild.Exec
                typeGenResult,
                () => (ITask) typeGenResult.GeneratedType.GetTypeInfo().DeclaredConstructors.First().Invoke( new[]
                {
-                  new TaskProxy( env, inspection, typeGenResult)
+                  new TaskProxy(_cache.ProcessMonitor, args, env, inspection, typeGenResult)
                } )
                );
          }
 
          return initializationResult;
-      }
-
-
-      private sealed class InitializationArgs
-      {
-         public InitializationArgs(
-            String framework,
-            String runtimeID,
-            String sdkPackageID,
-            String sdkPackageVersion,
-            Boolean restoreSDKPackage,
-            String settingsLocation,
-            String packageID,
-            String packageVersion,
-            Boolean packageIDIsSelf,
-            String assemblyPath,
-            String typeName,
-            String methodName,
-            IBuildEngine buildEngine
-            )
-         {
-            this.Framework = framework;
-            this.RuntimeID = runtimeID;
-            this.SDKPackageID = sdkPackageID;
-            this.SDKPackageVersion = sdkPackageVersion;
-            this.RestoreSDKPackage = restoreSDKPackage;
-            this.SettingsLocation = settingsLocation;
-            this.PackageID = packageID;
-            this.PackageVersion = packageVersion;
-            this.PackageIDIsSelf = packageIDIsSelf;
-            this.AssemblyPath = assemblyPath;
-            this.TypeName = typeName;
-            this.MethodName = methodName;
-            this.BuildEngine = buildEngine;
-         }
-
-         public String Framework { get; }
-         public String RuntimeID { get; }
-         public String SDKPackageID { get; }
-         public String SDKPackageVersion { get; }
-         public Boolean RestoreSDKPackage { get; }
-         public String SettingsLocation { get; }
-         public String PackageID { get; }
-         public String PackageVersion { get; }
-         public Boolean PackageIDIsSelf { get; }
-         public String AssemblyPath { get; }
-         public String TypeName { get; }
-         public String MethodName { get; }
-         public IBuildEngine BuildEngine { get; }
       }
 
       private sealed class InitializationResult
@@ -248,6 +199,54 @@ namespace NuGetUtils.MSBuild.Exec
 
          public Func<ITask> CreateTaskInstance { get; }
       }
+   }
+
+   internal sealed class InitializationArgs
+   {
+      public InitializationArgs(
+         String framework,
+         String runtimeID,
+         String sdkPackageID,
+         String sdkPackageVersion,
+         Boolean restoreSDKPackage,
+         String settingsLocation,
+         String packageID,
+         String packageVersion,
+         Boolean packageIDIsSelf,
+         String assemblyPath,
+         String typeName,
+         String methodName,
+         IBuildEngine buildEngine
+         )
+      {
+         this.Framework = framework;
+         this.RuntimeID = runtimeID;
+         this.SDKPackageID = sdkPackageID;
+         this.SDKPackageVersion = sdkPackageVersion;
+         this.RestoreSDKPackage = restoreSDKPackage;
+         this.SettingsLocation = settingsLocation;
+         this.PackageID = packageID;
+         this.PackageVersion = packageVersion;
+         this.PackageIDIsSelf = packageIDIsSelf;
+         this.AssemblyPath = assemblyPath;
+         this.TypeName = typeName;
+         this.MethodName = methodName;
+         this.BuildEngine = buildEngine;
+      }
+
+      public String Framework { get; }
+      public String RuntimeID { get; }
+      public String SDKPackageID { get; }
+      public String SDKPackageVersion { get; }
+      public Boolean RestoreSDKPackage { get; }
+      public String SettingsLocation { get; }
+      public String PackageID { get; }
+      public String PackageVersion { get; }
+      public Boolean PackageIDIsSelf { get; }
+      public String AssemblyPath { get; }
+      public String TypeName { get; }
+      public String MethodName { get; }
+      public IBuildEngine BuildEngine { get; }
    }
 
    public static partial class NuGetUtilsExtensions

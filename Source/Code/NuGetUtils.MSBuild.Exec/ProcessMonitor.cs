@@ -136,6 +136,7 @@ namespace NuGetUtils.MSBuild.Exec
          this Process process, // Typically created by  ProcessMonitor.CreateProcess(), just don't start it!
                                // String shutdownSemaphoreArgumentName,
          CancellationToken token,
+         String shutdownSemaphoreName,
          TimeSpan shutdownSemaphoreMaxWaitTime,
          // Boolean cancelabilityIsOptional = false,
          Func<StreamWriter, Task> stdinWriter = null,
@@ -243,7 +244,7 @@ namespace NuGetUtils.MSBuild.Exec
 
       private static Semaphore CreateSemaphore(
          //         String argumentName,
-         String namePrefix,
+         String semaphoreName,
          // ref String argsString, 
          Boolean isOptional
          )
@@ -253,10 +254,10 @@ namespace NuGetUtils.MSBuild.Exec
          Semaphore retVal = null;
          //if ( !String.IsNullOrEmpty( argumentName ) )
          //{
-         String semaName = null;
+         //String semaName = null;
          try
          {
-            retVal = CreateSemaphore( namePrefix, out semaName );
+            retVal = CreateSemaphore( semaphoreName );
          }
          catch
          {
@@ -276,13 +277,13 @@ namespace NuGetUtils.MSBuild.Exec
          return retVal;
       }
 
-      private static Semaphore CreateSemaphore( String namePrefix, out String semaphoreName )
+      private static Semaphore CreateSemaphore( String semaphoreName )
       {
          var bytez = new Byte[32];
          Semaphore retVal;
          do
          {
-            semaphoreName = @"Global\" + namePrefix + StringConversions.EncodeBase64( Guid.NewGuid().ToByteArray(), true );
+            semaphoreName = @"Global\" + semaphoreName;
             retVal = new Semaphore( 0, Int32.MaxValue, semaphoreName, out var createdNewSemaphore );
             if ( !createdNewSemaphore )
             {
@@ -308,7 +309,9 @@ namespace NuGetUtils.MSBuild.Exec
          this String fileName,
          String arguments,
          CancellationToken token,
+         String shutdownSemaphoreName,
          TimeSpan shutdownSemaphoreMaxWaitTime,
+         Func<String, Boolean, Task> onStdOutOrErrLine = null,
          Func<StreamWriter, Task> stdinWriter = null
          )
       {
@@ -322,23 +325,36 @@ namespace NuGetUtils.MSBuild.Exec
                onStdErrLine: errLine => processOutput.Enqueue( (true, DateTime.UtcNow, errLine) ) )
                .ExecuteAsFileAtThisPathWithCancelability(
                   token,
+                  shutdownSemaphoreName,
                   shutdownSemaphoreMaxWaitTime,
                   stdinWriter: stdinWriter,
-                  onTick: async () => await ProcessOutput( processOutput )
+                  onTick: async () => await ProcessOutput( processOutput, onStdOutOrErrLine )
                );
          }
          finally
          {
             // Flush any 'leftover' messages
-            await ProcessOutput( processOutput );
+            await ProcessOutput( processOutput, onStdOutOrErrLine );
          }
       }
 
-      private static async Task ProcessOutput( ConcurrentQueue<(Boolean IsError, DateTime Timestamp, String Data)> processOutput )
+      private static async Task ProcessOutput(
+         ConcurrentQueue<(Boolean IsError, DateTime Timestamp, String Data)> processOutput,
+         Func<String, Boolean, Task> onStdOutOrErrLine
+         )
       {
+         if ( onStdOutOrErrLine == null )
+         {
+            onStdOutOrErrLine = ( line, isError ) => ( isError ? Console.Error : Console.Out ).WriteLineAsync( line );
+         }
+
          while ( processOutput.TryDequeue( out var output ) )
          {
-            await ( output.IsError ? Console.Error : Console.Out ).WriteLineAsync( output.Data );
+            var t = onStdOutOrErrLine( output.Data, output.IsError );
+            if ( t != null )
+            {
+               await t;
+            }
 
             //if ( output.IsError )
             //{
@@ -385,7 +401,7 @@ namespace NuGetUtils.MSBuild.Exec
 
          (var stdinWriter, var stdinSuccess) = GetStdInWriter( input );
          (var exitCode, var stdout, var stderr) = await
-            this.GetProcessFilePath( assemblyName )
+            this.GetProcessFilePath( ref assemblyName )
             .ExecuteAsFileAtThisPath(
                GetProcessArguments( assemblyName ),
                stdinWriter: stdinWriter
@@ -408,17 +424,21 @@ namespace NuGetUtils.MSBuild.Exec
          String assemblyName,
          TInput input,
          CancellationToken token,
-         TimeSpan shutdownSemaphoreMaxWaitTime
+         String shutdownSemaphoreName,
+         TimeSpan shutdownSemaphoreMaxWaitTime,
+         Func<String, Boolean, Task> onStdOutOrErrLine
          )
       {
          (var stdinWriter, var stdinSuccess) = GetStdInWriter( input );
 
-         var returnCode = await this.GetProcessFilePath( assemblyName )
+         var returnCode = await this.GetProcessFilePath( ref assemblyName )
             .ExecuteAsFileAtThisPathWithCancelabilityAndStandardRedirects(
                GetProcessArguments( assemblyName ),
                token,
+               shutdownSemaphoreName,
                shutdownSemaphoreMaxWaitTime,
-               stdinWriter: stdinWriter
+               stdinWriter: stdinWriter,
+               onStdOutOrErrLine: onStdOutOrErrLine
                );
 
          return stdinSuccess() ?
@@ -427,7 +447,7 @@ namespace NuGetUtils.MSBuild.Exec
       }
 
       private String GetProcessFilePath(
-         String assemblyName
+         ref String assemblyName
          )
       {
          assemblyName = Path.GetFullPath( Path.Combine( this._thisAssemblyDirectory, assemblyName ) + "." +
@@ -444,7 +464,13 @@ namespace NuGetUtils.MSBuild.Exec
             throw new InvalidOperationException( $"The target executable process \"{assemblyName}\" does not exist." );
          }
 
-         return assemblyName;
+         return
+#if NET46
+            assemblyName
+#else
+            "dotnet"
+#endif
+            ;
       }
 
       private static String GetProcessArguments(

@@ -74,6 +74,9 @@ namespace NuGetUtils.MSBuild.Exec.Common
       /// <inheritdoc />
       public String ReturnValuePath { get; set; }
 
+      /// <inheritdoc />
+      public Int32? MethodToken { get; set; }
+
 #if !NET46
 
       /// <inheritdoc />

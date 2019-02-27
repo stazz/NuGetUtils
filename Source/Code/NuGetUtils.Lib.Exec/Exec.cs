@@ -231,11 +231,19 @@ namespace NuGetUtils.Lib.Exec
       /// <returns></returns>
       public static MethodInfo FindSuitableMethodForNuGetExec(
          this Assembly loadedAssembly,
+         Int32? methodToken = null,
          String entrypointTypeName = null,
          String entrypointMethodName = null
          )
       {
-         return new MethodSearcher( loadedAssembly, entrypointTypeName, entrypointMethodName ).GetSuitableMethod();
+
+         return methodToken.HasValue ?
+#if NETSTANDARD1_6
+            loadedAssembly.ManifestModule.GetTypes().SelectMany( t => t.GetTypeInfo().DeclaredMethods ).First( m => m.MetadataToken == methodToken.Value )
+#else
+            (MethodInfo) loadedAssembly.ManifestModule.ResolveMethod( methodToken.Value )
+#endif
+            : new MethodSearcher( loadedAssembly, entrypointTypeName, entrypointMethodName ).GetSuitableMethod();
       }
    }
 
@@ -518,7 +526,7 @@ public static partial class E_NuGetUtils
       Assembly loadedAssembly
       )
    {
-      return loadedAssembly.FindSuitableMethodForNuGetExec( configuration.EntrypointTypeName, configuration.EntrypointMethodName );
+      return loadedAssembly.FindSuitableMethodForNuGetExec( methodToken: configuration.MethodToken, entrypointTypeName: configuration.EntrypointTypeName, entrypointMethodName: configuration.EntrypointMethodName );
    }
 
    private static async Task<Object> ExecuteSpecificMethod(

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using Newtonsoft.Json;
 using NuGet.Common;
 using NuGetUtils.Lib.Exec;
 using NuGetUtils.Lib.Restore;
@@ -53,7 +54,7 @@ namespace NuGetUtils.MSBuild.Exec.Perform
          var maybeResult = await config.ExecuteMethodAndSerializeReturnValue(
             token,
             restorer,
-            info.GetAdditonalTypeProvider( null ),
+            type => JsonConvert.DeserializeObject( config.InputProperties, type ),
 #if NET46
             null
 #else

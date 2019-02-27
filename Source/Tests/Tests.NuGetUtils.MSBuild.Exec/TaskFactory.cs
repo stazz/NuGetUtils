@@ -63,6 +63,14 @@ namespace Tests.NuGetUtils.MSBuild.Exec
                ).ToString(),
             null
             ) );
+
+         const String TEST_VALUE = "Testing";
+         var task = factory.CreateTask( null );
+         var property = task.GetType().GetRuntimeProperty( "Value" );
+         property.SetMethod.Invoke( task, new[] { TEST_VALUE } );
+         Assert.IsTrue( task.Execute() );
+         Assert.AreEqual( TEST_VALUE, property.GetMethod.Invoke( task, null ) );
+
       }
    }
 }

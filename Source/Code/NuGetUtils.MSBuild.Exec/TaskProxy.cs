@@ -34,6 +34,7 @@ namespace NuGetUtils.MSBuild.Exec
    public sealed class TaskProxy
    {
       private readonly ImmutableDictionary<String, TaskPropertyHolder> _propertyInfos;
+      private readonly InitializationArgs _initializationArgs;
       private readonly EnvironmentValue _environment;
       private readonly InspectionValue _entrypoint;
 
@@ -41,11 +42,15 @@ namespace NuGetUtils.MSBuild.Exec
       private readonly NuGetUtilsExecProcessMonitor _processMonitor;
 
       internal TaskProxy(
+         NuGetUtilsExecProcessMonitor processMonitor,
+         InitializationArgs initializationArgs,
          EnvironmentValue environment,
          InspectionValue entrypoint,
          TypeGenerationResult generationResult
          )
       {
+         this._processMonitor = ArgumentValidator.ValidateNotNull( nameof( processMonitor ), processMonitor );
+         this._initializationArgs = ArgumentValidator.ValidateNotNull( nameof( initializationArgs ), initializationArgs );
          this._environment = ArgumentValidator.ValidateNotNull( nameof( environment ), environment );
          this._entrypoint = ArgumentValidator.ValidateNotNull( nameof( entrypoint ), entrypoint );
          this._propertyInfos = generationResult
@@ -84,40 +89,74 @@ namespace NuGetUtils.MSBuild.Exec
       // Called by generated task type
       public Boolean Execute( IBuildEngine be )
       {
-         return this.ExecuteAsync().GetAwaiter().GetResult();
+         return this.ExecuteAsync( be ).GetAwaiter().GetResult();
       }
 
-      private async Task<Boolean> ExecuteAsync()
+      private async Task<Boolean> ExecuteAsync( IBuildEngine be )
       {
          // Call process, deserialize result, set output properties.
          var tempFileLocation = Path.Combine( Path.GetTempPath(), $"NuGetUtilsExec_" + Guid.NewGuid() );
 
-         var returnCode = await this._processMonitor.CallProcessAndStreamOutputAsync(
-            "NuGetUtils.MSBuild.Exec.Perform",
-            new PerformConfiguration<String>
-            {
-               ReturnValuePath = tempFileLocation,
-            },
-            this._cancellationTokenSource.Token,
-            TimeSpan.FromSeconds( 1 )
-            );
-         if ( returnCode.HasValue )
+         try
          {
-            using ( var sReader = new StreamReader( File.Open( tempFileLocation, FileMode.Open, FileAccess.Read, FileShare.Read ), new UTF8Encoding( false, false ), false ) )
-            using ( var jReader = new JsonTextReader( sReader ) )
-            {
-               foreach ( var jProp in ( await JObject.LoadAsync( jReader ) )
-                  .Properties()
-                  .Where( p => this._propertyInfos.TryGetValue( p.Name, out var prop ) && prop.IsOutput )
-                  )
+            var shutdownSemaphoreName = "NuGetMSBuildExecShutdownSemaphore_" + StringConversions.EncodeBase64( Guid.NewGuid().ToByteArray(), true );
+
+            var returnCode = await this._processMonitor.CallProcessAndStreamOutputAsync(
+               "NuGetUtils.MSBuild.Exec.Perform",
+               new PerformConfiguration<String>
                {
-                  var jValue = jProp.Value;
-                  this._propertyInfos[jProp.Name].Value = jProp.Value is JValue jPrimitive ? jPrimitive.Value?.ToString() : jValue.ToString();
+                  NuGetConfigurationFile = this._initializationArgs.SettingsLocation,
+                  RestoreFramework = this._environment.ThisFramework,
+                  RestoreRuntimeID = this._environment.ThisRuntimeID,
+                  SDKFrameworkPackageID = this._environment.SDKPackageID,
+                  SDKFrameworkPackageVersion = this._environment.SDKPackageVersion,
+                  PackageID = this._environment.PackageID,
+                  PackageVersion = this._entrypoint.ExactPackageVersion,
+                  MethodToken = this._entrypoint.MethodToken,
+                  AssemblyPath = this._initializationArgs.AssemblyPath,
+
+                  ShutdownSemaphoreName = shutdownSemaphoreName,
+                  ReturnValuePath = tempFileLocation,
+                  InputProperties = new JObject(
+                     this._propertyInfos
+                        .Where( kvp => !kvp.Value.IsOutput )
+                        .Select( kvp => new JProperty( kvp.Key, kvp.Value.Value ) )
+                     ).ToString( Formatting.None ),
+               },
+               this._cancellationTokenSource.Token,
+               shutdownSemaphoreName,
+               TimeSpan.FromSeconds( 1 ),
+               be != null ? default( Func<String, Boolean, Task> ) : ( line, isError ) =>
+               {
+                  // TODO log to IBuildEngine
+                  return null;
+               }
+               );
+            if ( returnCode.HasValue )
+            {
+               using ( var sReader = new StreamReader( File.Open( tempFileLocation, FileMode.Open, FileAccess.Read, FileShare.None ), new UTF8Encoding( false, false ), false ) )
+               using ( var jReader = new JsonTextReader( sReader ) )
+               {
+                  foreach ( var jProp in ( await JObject.LoadAsync( jReader ) )
+                     .Properties()
+                     .Where( p => this._propertyInfos.TryGetValue( p.Name, out var prop ) && prop.IsOutput )
+                     )
+                  {
+                     var jValue = jProp.Value;
+                     this._propertyInfos[jProp.Name].Value = jProp.Value is JValue jPrimitive ? jPrimitive.Value?.ToString() : jValue.ToString();
+                  }
                }
             }
-         }
 
-         return returnCode.HasValue && returnCode.Value == 0;
+            return returnCode.HasValue && returnCode.Value == 0;
+         }
+         finally
+         {
+            if ( File.Exists( tempFileLocation ) )
+            {
+               File.Delete( tempFileLocation );
+            }
+         }
       }
 
       private sealed class TaskPropertyHolder

@@ -82,6 +82,7 @@ namespace NuGetUtils.MSBuild.Exec
          //var beReady = typeof( ResolverLogger ).GetMethod( nameof( ResolverLogger.TaskBuildEngineIsReady ) ) ?? throw new Exception( "Internal error: no log state updater." );
 
          var outPropertyInfos = new List<(String, Type, FieldBuilder)>();
+         var interfacePropertyInfos = new List<(String, Type, FieldBuilder)>();
 
          var properties = inputs
             .Select( p => (p, new TaskPropertyInfo( p.PropertyName, typeof( String ), false, p.IsRequired )) )
@@ -121,7 +122,7 @@ namespace NuGetUtils.MSBuild.Exec
                propField = tb.DefineField( ( isFromInterface ? "_value" : "_out" ) + propName, propType, FieldAttributes.Private );
                il.Emit( OpCodes.Ldarg_0 );
                il.Emit( OpCodes.Ldfld, propField );
-               outPropertyInfos.Add( (propName, propType, propField) );
+               ( isFromInterface ? interfacePropertyInfos : outPropertyInfos ).Add( (propName, propType, propField) );
             }
             else
             {
@@ -192,7 +193,7 @@ namespace NuGetUtils.MSBuild.Exec
             new Type[] { }
             );
          il = execute.GetILGenerator();
-         var beField = outPropertyInfos[outPropertyInfos.Count - 1].Item3;
+         var beField = interfacePropertyInfos[1].Item3;
 
          if ( outPropertyInfos.Count > 0 )
          {

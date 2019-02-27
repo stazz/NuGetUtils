@@ -34,14 +34,12 @@ namespace NuGetUtils.MSBuild.Exec
 {
    internal sealed class NuGetExecutionCache
    {
-      private readonly NuGetUtilsExecProcessMonitor _processMonitor;
-
       private readonly ConcurrentDictionary<EnvironmentKeyInfo, AsyncLazy<EnvironmentValue>> _environments;
       private readonly ConcurrentDictionary<InspectionKey, AsyncLazy<InspectionValue>> _inspections;
 
       public NuGetExecutionCache()
       {
-         this._processMonitor = new NuGetUtilsExecProcessMonitor();
+         this.ProcessMonitor = new NuGetUtilsExecProcessMonitor();
          this._environments = new ConcurrentDictionary<EnvironmentKeyInfo, AsyncLazy<EnvironmentValue>>( ComparerFromFunctions.NewEqualityComparer<EnvironmentKeyInfo>(
             ( xInfo, yInfo ) =>
             {
@@ -73,6 +71,8 @@ namespace NuGetUtils.MSBuild.Exec
             ) );
       }
 
+      public NuGetUtilsExecProcessMonitor ProcessMonitor { get; }
+
       public async Task<EnvironmentValue> DetectEnvironmentAsync(
          EnvironmentKeyInfo keyInfo
          )
@@ -82,7 +82,7 @@ namespace NuGetUtils.MSBuild.Exec
             var key = theKeyInfo.Key;
             var packageIDIsSelf = theKeyInfo.PackageIDIsProjectPath;
 
-            var env = await this._processMonitor.CallProcessAndGetResultAsync<DiscoverConfiguration<String>, EnvironmentInspectionResult>(
+            var env = await this.ProcessMonitor.CallProcessAndGetResultAsync<DiscoverConfiguration<String>, EnvironmentInspectionResult>(
                "NuGetUtils.MSBuild.Exec.Discover",
                new DiscoverConfiguration<String>()
                {
@@ -118,7 +118,7 @@ namespace NuGetUtils.MSBuild.Exec
          return await this._inspections.GetOrAdd( key, theKey => new UtilPack.AsyncLazy<InspectionValue>( async () =>
          {
 
-            var env = await this._processMonitor.CallProcessAndGetResultAsync<InspectConfiguration<String>, PackageInspectionResult>(
+            var env = await this.ProcessMonitor.CallProcessAndGetResultAsync<InspectConfiguration<String>, PackageInspectionResult>(
                "NuGetUtils.MSBuild.Exec.Inspect",
                new InspectConfiguration<String>()
                {
