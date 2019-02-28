@@ -21,7 +21,7 @@ dotnet pack \
 
 # Now install the package
 LOCAL_TEMP_NUGET_SOURCE="${BASE_ROOT}/local_nuget_repo"
-dotnet push \
+dotnet nuget push \
   "${BASE_ROOT}/" \
   "${CS_OUTPUT}/Release/bin/NuGetUtils.MSBuild.Exec.TestPackage.1.0.0.nupkg" \
   --source "${LOCAL_TEMP_NUGET_SOURCE}"
