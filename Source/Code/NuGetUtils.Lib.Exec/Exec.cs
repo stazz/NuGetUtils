@@ -226,6 +226,7 @@ namespace NuGetUtils.Lib.Exec
       /// This is helper method to find suitable method used by <see cref="E_NuGetUtils.ExecuteMethodWithinNuGetAssemblyAsync"/>.
       /// </summary>
       /// <param name="loadedAssembly">The assembly that has been loaded from NuGet package.</param>
+      /// <param name="methodToken">The optional metadata token of the method, uniquely identifying it. If this parameter is specified, then <paramref name="entrypointTypeName"/> and <paramref name="entrypointMethodName"/> will not be used.</param>
       /// <param name="entrypointTypeName">The optional name of the type containing method to execute.</param>
       /// <param name="entrypointMethodName">The optional name of the method to execute.</param>
       /// <returns></returns>
@@ -526,7 +527,11 @@ public static partial class E_NuGetUtils
       Assembly loadedAssembly
       )
    {
-      return loadedAssembly.FindSuitableMethodForNuGetExec( methodToken: configuration.MethodToken, entrypointTypeName: configuration.EntrypointTypeName, entrypointMethodName: configuration.EntrypointMethodName );
+      return loadedAssembly.FindSuitableMethodForNuGetExec(
+         methodToken: configuration.MethodToken,
+         entrypointTypeName: configuration.EntrypointTypeName,
+         entrypointMethodName: configuration.EntrypointMethodName
+         );
    }
 
    private static async Task<Object> ExecuteSpecificMethod(
