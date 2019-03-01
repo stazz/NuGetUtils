@@ -21,6 +21,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -71,6 +72,31 @@ namespace Tests.NuGetUtils.MSBuild.Exec
          Assert.IsTrue( task.Execute() );
          Assert.AreEqual( TEST_VALUE, property.GetMethod.Invoke( task, null ) );
 
+      }
+
+      [TestMethod, Timeout( 30000 )]
+      public async Task TestCancellation()
+      {
+         var factory = new NuGetExecutionTaskFactory();
+         Assert.IsTrue( factory.Initialize(
+            null,
+            null,
+            new XElement( "TaskBody",
+               new XElement( "PackageID", "NuGetUtils.MSBuild.Exec.TestPackage" ),
+               new XElement( "PackageVersion", "1.0.0" ),
+               new XElement( "EntryPointTypeName", "NuGetUtils.MSBuild.Exec.TestPackage.EntryPoints" ),
+               new XElement( "EntryPointMethodName", "Neverending" )
+               ).ToString(),
+            null
+            ) );
+
+         var task = factory.CreateTask( null );
+
+         var taskProxy = (TaskProxy) task.GetType().GetTypeInfo().DeclaredFields.First( f => String.Equals( f.Name, "_task" ) ).GetValue( task );
+         var cancellationTokenSource = (CancellationTokenSource) taskProxy.GetType().GetTypeInfo().DeclaredFields.First( f => String.Equals( f.Name, "_cancellationTokenSource" ) ).GetValue( taskProxy );
+         var executeTask = taskProxy.ExecuteAsync( null );
+         cancellationTokenSource.CancelAfter( 10000 );
+         await executeTask;
       }
    }
 }

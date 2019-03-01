@@ -92,11 +92,12 @@ namespace NuGetUtils.MSBuild.Exec
          return this.ExecuteAsync( be ).GetAwaiter().GetResult();
       }
 
-      private async Task<Boolean> ExecuteAsync( IBuildEngine be )
+      public async Task<Boolean> ExecuteAsync( IBuildEngine be )
       {
          // Call process, deserialize result, set output properties.
          var tempFileLocation = Path.Combine( Path.GetTempPath(), $"NuGetUtilsExec_" + Guid.NewGuid() );
 
+         Boolean retVal;
          try
          {
             var shutdownSemaphoreName = "NuGetMSBuildExecShutdownSemaphore_" + StringConversions.EncodeBase64( Guid.NewGuid().ToByteArray(), true );
@@ -126,13 +127,13 @@ namespace NuGetUtils.MSBuild.Exec
                this._cancellationTokenSource.Token,
                shutdownSemaphoreName,
                TimeSpan.FromSeconds( 1 ),
-               be != null ? default( Func<String, Boolean, Task> ) : ( line, isError ) =>
+               be == null ? default( Func<String, Boolean, Task> ) : ( line, isError ) =>
                {
                   // TODO log to IBuildEngine
                   return null;
                }
                );
-            if ( returnCode.HasValue )
+            if ( returnCode.HasValue && File.Exists( tempFileLocation ) )
             {
                using ( var sReader = new StreamReader( File.Open( tempFileLocation, FileMode.Open, FileAccess.Read, FileShare.None ), new UTF8Encoding( false, false ), false ) )
                using ( var jReader = new JsonTextReader( sReader ) )
@@ -148,7 +149,19 @@ namespace NuGetUtils.MSBuild.Exec
                }
             }
 
-            return returnCode.HasValue && returnCode.Value == 0;
+            retVal = returnCode.HasValue && returnCode.Value == 0;
+         }
+         catch
+         {
+            if ( this._cancellationTokenSource.IsCancellationRequested )
+            {
+               retVal = false;
+
+            }
+            else
+            {
+               throw;
+            }
          }
          finally
          {
@@ -157,6 +170,8 @@ namespace NuGetUtils.MSBuild.Exec
                File.Delete( tempFileLocation );
             }
          }
+
+         return retVal;
       }
 
       private sealed class TaskPropertyHolder

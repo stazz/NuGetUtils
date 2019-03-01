@@ -18,33 +18,18 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NuGetUtils.MSBuild.Exec.TestPackage
 {
    public static partial class EntryPoints
    {
-      public static EchoOutput Echo(
-         EchoInput input
-         )
+      public static async Task Neverending()
       {
-         return new EchoOutput( input );
+         while ( true )
+         {
+            await Task.Delay( 500 );
+         }
       }
-   }
-
-   public sealed class EchoInput
-   {
-      public String Value { get; set; }
-   }
-
-   public sealed class EchoOutput
-   {
-      public EchoOutput(
-         EchoInput input
-         )
-      {
-         this.Result = input?.Value;
-      }
-
-      public String Result { get; }
    }
 }

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using NuGetUtils.Lib.Tool.Agnostic;
 using NuGetUtils.MSBuild.Exec;
+using NuGetUtils.MSBuild.Exec.Common;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -29,8 +30,8 @@ namespace NuGetUtils.MSBuild.Exec
          return (CreateProcess(
             fileName,
             arguments,
-            onStdOutLine: outLine => stdout.Append( outLine ),
-            onStdErrLine: errLine => stderr.Append( errLine )
+            onStdOutLine: outLine => stdout.Append( outLine ).Append( '\n' ),
+            onStdErrLine: errLine => stderr.Append( errLine ).Append( '\n' )
             ), stdout, stderr);
       }
 

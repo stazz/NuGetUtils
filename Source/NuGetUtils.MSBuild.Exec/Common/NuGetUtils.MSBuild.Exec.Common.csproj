@@ -14,6 +14,8 @@
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Exec.Agnostic\NuGetUtils.Lib.Exec.Agnostic.csproj" />
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Restore.Agnostic\NuGetUtils.Lib.Restore.Agnostic.csproj" />
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Tool.Agnostic\NuGetUtils.Lib.Tool.Agnostic.csproj" />
+
+    <PackageReference Include="UtilPack" Version="1.7.2" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">

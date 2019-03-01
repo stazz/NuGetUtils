@@ -25,6 +25,7 @@ using NuGetUtils.MSBuild.Exec.Common;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using UtilPack;
 
 namespace NuGetUtils.MSBuild.Exec.Perform
 {
@@ -50,20 +51,37 @@ namespace NuGetUtils.MSBuild.Exec.Perform
          String sdkPackageVersion
          )
       {
+
          var config = info.Configuration;
-         var maybeResult = await config.ExecuteMethodAndSerializeReturnValue(
-            token,
-            restorer,
-            type => JsonConvert.DeserializeObject( config.InputProperties, type ),
+         async Task<EitherOr<Object, NoExecutableMethodFound>> WaitForShutdownSemaphore()
+         {
+            await ShutdownSemaphoreFactory.CreateAwaiter( config.ShutdownSemaphoreName ).WaitForShutdownSignal( token );
+            return default;
+         }
+
+         var shutdownTask = WaitForShutdownSemaphore();
+
+         var maybeResultTask = await Task.WhenAny(
+            shutdownTask,
+            config.ExecuteMethodAndSerializeReturnValue(
+               token,
+               restorer,
+               type => JsonConvert.DeserializeObject( config.InputProperties, type ),
 #if NET46
-            null
+               null
 #else
-            sdkPackageID,
-            sdkPackageVersion
+               sdkPackageID,
+               sdkPackageVersion
 #endif
+               )
             );
 
-         return maybeResult.IsFirst ? 0 : -3;
+         // Use 'await' on maybeResultTask to extract the result - or throw an exception if task failed
+         var maybeResult = await maybeResultTask;
+
+         return ReferenceEquals( maybeResultTask, shutdownTask ) ?
+            -4 : // Canceled
+            ( maybeResult.IsFirst ? 0 : -3 );
 
       }
 
@@ -71,7 +89,8 @@ namespace NuGetUtils.MSBuild.Exec.Perform
          ConfigurationInformation<TConfiguration> info
          )
       {
-         return info.Configuration.ValidateConfiguration();
+         return info.Configuration.ValidateConfiguration()
+            && !String.IsNullOrEmpty( info.Configuration.ShutdownSemaphoreName );
       }
 
       protected override String GetDocumentation()

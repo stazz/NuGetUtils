@@ -631,7 +631,7 @@ public static partial class E_NuGetUtils
       )
    {
       return enumerable.DefaultIfMoreThan(
-         arr => arr[0],
+         arr => arr.GetElementOrDefault( 0 ),
          maxLimit: 1,
          defaultValue: defaultValue
          );

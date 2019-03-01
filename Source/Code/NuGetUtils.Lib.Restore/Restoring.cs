@@ -308,27 +308,33 @@ namespace NuGetUtils.Lib.Restore
       {
          // There are control flow paths when we never do anything async so we should check here explicitly for cancellation.
          token.ThrowIfCancellationRequested();
-         LockFile retVal = null;
          // Prepare for invoking restore command
          var versionRanges = this.CreatePackageInfo( packageInfo );
+
+         async Task<(LockFile, String)> RestoreUsingNuGetAndWriteToDisk( String lockFilesDir, String lockFileCachePath )
+         {
+            var lf = ( await this.PerformRestore( versionRanges, token ) ).LockFile;
+
+            (var serializedLockFile, var wroteToDisk) = await this.SaveToDiskCache( versionRanges, lockFilesDir, lockFileCachePath, lf );
+            if ( wroteToDisk )
+            {
+               this.NuGetLogger?.Log( LogLevel.Verbose, "Wrote lock file to disk cache." );
+            }
+            return (lf, serializedLockFile);
+         }
+
+         LockFile retVal = null;
          if ( versionRanges.Count > 0 )
          {
             (var key, var serializedLockFile) = this.TryGetFromInMemoryCache( versionRanges );
+            String lockFileCachePath, lockFilesDir;
             if ( serializedLockFile == null )
             {
-               String lockFileCachePath, lockFilesDir;
                (serializedLockFile, lockFilesDir, lockFileCachePath) = await this.TryGetFromDiskCache( versionRanges, key != null );
                if ( serializedLockFile == null )
                {
                   // Disk cache not in use or lock file has not been cached to disk, perform actual restore
-                  retVal = ( await this.PerformRestore( versionRanges, token ) ).LockFile;
-
-                  Boolean wroteToDisk;
-                  (serializedLockFile, wroteToDisk) = await this.SaveToDiskCache( versionRanges, lockFilesDir, lockFileCachePath, retVal );
-                  if ( wroteToDisk )
-                  {
-                     this.NuGetLogger?.Log( LogLevel.Verbose, "Wrote lock file to disk cache." );
-                  }
+                  (retVal, serializedLockFile) = await RestoreUsingNuGetAndWriteToDisk( lockFilesDir, lockFileCachePath );
                }
                else
                {
@@ -339,12 +345,26 @@ namespace NuGetUtils.Lib.Restore
             }
             else
             {
+               lockFileCachePath = lockFilesDir = null;
                this.NuGetLogger?.Log( LogLevel.Verbose, "Found restorable packages within in-memory cache." );
             }
 
             if ( retVal == null && serializedLockFile != null )
             {
                retVal = this._lockFileFormat.Parse( serializedLockFile, Path.Combine( this._nugetRestoreRootDir, "dummy" ) );
+
+               if ( lockFileCachePath != null && lockFilesDir != null )
+               {
+                  // Check if the disk cache has gone stale (e.g. someone manually deleted package from repo folder)
+                  var first = versionRanges.First();
+                  var staled = versionRanges.Where( v => this.LocalRepositories.Values.All( lr => !Directory.Exists( Path.Combine( lr.RepositoryRoot, lr.PathResolver.GetPackageDirectory( v.Key, retVal.Targets[0].GetTargetLibrary( v.Key ).Version ) ) ) ) );
+                  if ( staled.Any() )
+                  {
+                     // Have to re-restore
+                     String ignored;
+                     (retVal, ignored) = await RestoreUsingNuGetAndWriteToDisk( lockFilesDir, lockFileCachePath );
+                  }
+               }
             }
          }
 
