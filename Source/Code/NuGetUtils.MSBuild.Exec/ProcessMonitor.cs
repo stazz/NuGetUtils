@@ -144,12 +144,15 @@ namespace NuGetUtils.MSBuild.Exec
          )
       {
          Int32? exitCode = null;
-         using ( var shutdownSemaphore = CreateSemaphore( "ShutdownSemaphore_", !token.CanBeCanceled ) ) // || cancelabilityIsOptional ) )
+         using ( var shutdownSemaphore = token.CanBeCanceled ? ShutdownSemaphoreFactory.CreateSignaller( shutdownSemaphoreName ) : default )
          using ( process ) // var process = ProcessMonitor.CreateProcess( fileName, arguments, onStdOutLine, onStdErrLine ) )
          {
             process.EnableRaisingEvents = true;
 
             DateTime? shutdownSignalledTime = null;
+
+            Task cancelTask = null;
+
             void OnCancel()
             {
                try
@@ -163,7 +166,7 @@ namespace NuGetUtils.MSBuild.Exec
                   {
                      // Signal the process to shut down
                      shutdownSignalledTime = DateTime.UtcNow;
-                     shutdownSemaphore.Release();
+                     cancelTask = shutdownSemaphore.SignalAsync();
                   }
                }
                catch
@@ -173,57 +176,67 @@ namespace NuGetUtils.MSBuild.Exec
                }
             }
 
-            using ( token.Register( OnCancel ) )
+            try
             {
-               await ProcessMonitor.StartProcessAsync( process, stdinWriter: stdinWriter );
-
-               var hasExited = false;
-
-               while ( !hasExited )
+               using ( token.Register( OnCancel ) )
                {
-                  var tickTask = onTick?.Invoke();
-                  if ( tickTask != null )
-                  {
-                     await tickTask;
-                  }
+                  await ProcessMonitor.StartProcessAsync( process, stdinWriter: stdinWriter );
 
-                  if ( process.WaitForExit( 0 ) )
-                  {
-                     // The process has exited, clean up our stuff
+                  var hasExited = false;
 
-                     // Process.HasExited has following documentation:
-                     // When standard output has been redirected to asynchronous event handlers, it is possible that output processing will
-                     // not have completed when this property returns true. To ensure that asynchronous event handling has been completed,
-                     // call the WaitForExit() overload that takes no parameter before checking HasExited.
-                     process.WaitForExit();
-                     while ( !process.HasExited )
+                  while ( !hasExited )
+                  {
+                     var tickTask = onTick?.Invoke();
+                     if ( tickTask != null )
                      {
+                        await tickTask;
+                     }
+
+                     if ( process.WaitForExit( 0 ) )
+                     {
+                        // The process has exited, clean up our stuff
+
+                        // Process.HasExited has following documentation:
+                        // When standard output has been redirected to asynchronous event handlers, it is possible that output processing will
+                        // not have completed when this property returns true. To ensure that asynchronous event handling has been completed,
+                        // call the WaitForExit() overload that takes no parameter before checking HasExited.
+                        process.WaitForExit();
+                        while ( !process.HasExited )
+                        {
+                           await Task.Delay( 50 );
+                        }
+
+                        hasExited = true;
+
+                        // Now, check if restart semaphore has been signalled
+                        // restart = restartSemaphore != null && restartSemaphore.WaitOne( 0 );
+                     }
+                     else if ( shutdownSignalledTime.HasValue && DateTime.UtcNow - shutdownSignalledTime.Value > shutdownSemaphoreMaxWaitTime )
+                     {
+                        // We have signalled shutdown, but process has not exited in time
+                        try
+                        {
+                           process.Kill();
+                        }
+                        catch
+                        {
+                           // Nothing we can do, really
+                           hasExited = true;
+                        }
+                     }
+                     else
+                     {
+                        // Wait async
                         await Task.Delay( 50 );
                      }
-
-                     hasExited = true;
-
-                     // Now, check if restart semaphore has been signalled
-                     // restart = restartSemaphore != null && restartSemaphore.WaitOne( 0 );
                   }
-                  else if ( shutdownSignalledTime.HasValue && DateTime.UtcNow - shutdownSignalledTime.Value > shutdownSemaphoreMaxWaitTime )
-                  {
-                     // We have signalled shutdown, but process has not exited in time
-                     try
-                     {
-                        process.Kill();
-                     }
-                     catch
-                     {
-                        // Nothing we can do, really
-                        hasExited = true;
-                     }
-                  }
-                  else
-                  {
-                     // Wait async
-                     await Task.Delay( 50 );
-                  }
+               }
+            }
+            finally
+            {
+               if ( cancelTask != null )
+               {
+                  await cancelTask;
                }
             }
 
@@ -242,58 +255,57 @@ namespace NuGetUtils.MSBuild.Exec
 
       }
 
-      private static Semaphore CreateSemaphore(
-         //         String argumentName,
-         String semaphoreName,
-         // ref String argsString, 
-         Boolean isOptional
-         )
-      {
+      //private static Semaphore CreateSemaphore(
+      //   //         String argumentName,
+      //   String semaphoreName,
+      //   // ref String argsString, 
+      //   Boolean isOptional
+      //   )
+      //{
 
 
-         Semaphore retVal = null;
-         //if ( !String.IsNullOrEmpty( argumentName ) )
-         //{
-         //String semaName = null;
-         try
-         {
-            retVal = CreateSemaphore( semaphoreName );
-         }
-         catch
-         {
-            // Certain platforms can give "The named version of this synchronization primitive is not supported on this platform." error
-            if ( !isOptional )
-            {
-               throw;
-            }
-         }
+      //   Semaphore retVal = null;
+      //   //if ( !String.IsNullOrEmpty( argumentName ) )
+      //   //{
+      //   //String semaName = null;
+      //   try
+      //   {
+      //      retVal = CreateSemaphore( semaphoreName );
+      //   }
+      //   catch
+      //   {
+      //      // Certain platforms can give "The named version of this synchronization primitive is not supported on this platform." error
+      //      if ( !isOptional )
+      //      {
+      //         throw;
+      //      }
+      //   }
 
-         //if ( retVal != null && !String.IsNullOrEmpty( semaName ) )
-         //{
-         //   argsString += " " + EscapeArgumentString( String.Format( "{0}={1}", argumentName, semaName ) );
-         //}
-         //}
+      //   //if ( retVal != null && !String.IsNullOrEmpty( semaName ) )
+      //   //{
+      //   //   argsString += " " + EscapeArgumentString( String.Format( "{0}={1}", argumentName, semaName ) );
+      //   //}
+      //   //}
 
-         return retVal;
-      }
+      //   return retVal;
+      //}
 
-      private static Semaphore CreateSemaphore( String semaphoreName )
-      {
-         var bytez = new Byte[32];
-         Semaphore retVal;
-         do
-         {
-            semaphoreName = @"Global\" + semaphoreName;
-            retVal = new Semaphore( 0, Int32.MaxValue, semaphoreName, out var createdNewSemaphore );
-            if ( !createdNewSemaphore )
-            {
-               retVal.DisposeSafely();
-               retVal = null;
-            }
-         } while ( retVal == null );
+      //private static Semaphore CreateSemaphore( String semaphoreName )
+      //{
+      //   Semaphore retVal;
+      //   do
+      //   {
+      //      semaphoreName = @"Global\" + semaphoreName;
+      //      retVal = new Semaphore( 0, Int32.MaxValue, semaphoreName, out var createdNewSemaphore );
+      //      if ( !createdNewSemaphore )
+      //      {
+      //         retVal.DisposeSafely();
+      //         retVal = null;
+      //      }
+      //   } while ( retVal == null );
 
-         return retVal;
-      }
+      //   return retVal;
+      //}
 
       private static String EscapeArgumentString( String argString )
       {
