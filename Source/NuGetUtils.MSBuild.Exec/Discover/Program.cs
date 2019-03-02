@@ -43,9 +43,15 @@ namespace NuGetUtils.MSBuild.Exec.Discover
 
    }
 
-   internal sealed class NuGetProgram : NuGetRestoringProgram<TConfiguration, DefaultConfigurationConfiguration>
+   internal sealed class NuGetProgram : NuGetRestoringProgramWithShutdownCancellation<TConfiguration, DefaultConfigurationConfiguration>
    {
       internal const String EXEC_ARGS_SEPARATOR = "--";
+
+      public NuGetProgram()
+         : base( config => config.ShutdownSemaphoreName )
+      {
+
+      }
 
       protected override Boolean ValidateConfiguration(
          ConfigurationInformation<TConfiguration> info
@@ -55,7 +61,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
             && ( info.Configuration.PackageIDIsSelf || info.Configuration.ValidateConfiguration() );
       }
 
-      protected override async Task<Int32> UseRestorerAsync(
+      protected override async Task<Int32> UseRestorerInParallelWithCancellationWatchingAsync(
          ConfigurationInformation<TConfiguration> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,

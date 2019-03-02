@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using NuGetUtils.MSBuild.Exec.Common;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,8 +24,16 @@ namespace NuGetUtils.MSBuild.Exec.Common
 {
    public class PerformConfiguration<TLogLevel> : DefaultNuGetExecutionConfiguration<TLogLevel>
    {
-      public String ShutdownSemaphoreName { get; set; }
-
       public String InputProperties { get; set; }
+   }
+}
+
+public static partial class E_NuGetUtils
+{
+   public static Boolean ValidatePerformConfiguration<TLogLevel>(
+      this PerformConfiguration<TLogLevel> configuration
+      )
+   {
+      return configuration.ValidateDefaultNuGetExecutionConfiguration();
    }
 }

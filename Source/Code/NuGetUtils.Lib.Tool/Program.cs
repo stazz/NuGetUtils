@@ -376,6 +376,102 @@ namespace NuGetUtils.Lib.Tool
    }
 
    /// <summary>
+   /// This class extends <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}"/> and provides ability to watch named semaphore (or file, see <see cref="ShutdownSemaphoreFactory"/>), and signal cancellation once signal is sent to semaphore/file.
+   /// </summary>
+   /// <typeparam name="TCommandLineConfiguration">The actual type that is the configuration for the program.</typeparam>
+   /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
+   /// <seealso cref="UseRestorerInParallelWithCancellationWatchingAsync"/>
+   public abstract class NuGetRestoringProgramWithShutdownCancellation<TCommandLineConfiguration, TConfigurationConfiguration> : NuGetRestoringProgram<TCommandLineConfiguration, TConfigurationConfiguration>
+      where TCommandLineConfiguration : class, NuGetUsageConfiguration<LogLevel>
+      where TConfigurationConfiguration : class, ConfigurationConfiguration
+   {
+      private readonly Func<TCommandLineConfiguration, String> _getShutdownSemaphoreName;
+
+      /// <summary>
+      /// Creates a new instance of <see cref="NuGetRestoringProgramWithShutdownCancellation{TCommandLineConfiguration, TConfigurationConfiguration}"/> with given callback to get shutdown semaphore name from configuration.
+      /// </summary>
+      /// <param name="getShutdownSemaphoreName">The callback to get shutdown semaphore name from configuration.</param>
+      /// <param name="lockFileCacheDirEnvName">The environment variable name that is used when trying to deduce lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME"/>.</param>
+      /// <param name="lockFileCacheDirWithinHomeDir">The default directory name within home directory which will hold the lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR"/>.</param>
+      public NuGetRestoringProgramWithShutdownCancellation(
+         Func<TCommandLineConfiguration, String> getShutdownSemaphoreName,
+         String lockFileCacheDirEnvName = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME,
+         String lockFileCacheDirWithinHomeDir = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR
+         ) : base( lockFileCacheDirEnvName, lockFileCacheDirWithinHomeDir )
+      {
+         this._getShutdownSemaphoreName = getShutdownSemaphoreName;
+      }
+
+      /// <summary>
+      /// Implements <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.UseRestorerAsync"/> in such way that cancellation by named semaphore is taken into account, if the configuration has non-<c>null</c> and non-empty shutdown semaphore name.
+      /// This method will call <see cref="UseRestorerInParallelWithCancellationWatchingAsync"/> to perform actual task of this program.
+      /// </summary>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
+      /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs.</param>
+      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="PerformWithConfigAsync"/>.</param>
+      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
+      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="PerformWithConfigAsync"/>.</param>
+      /// <returns>The return value for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</returns>
+      protected override async Task<Int32> UseRestorerAsync(
+         ConfigurationInformation<TCommandLineConfiguration> info,
+         CancellationToken token,
+         BoundRestoreCommandUser restorer,
+         String sdkPackageID,
+         String sdkPackageVersion
+         )
+      {
+         var semaphoreName = this._getShutdownSemaphoreName?.Invoke( info.Configuration );
+         Int32 retVal;
+         if ( String.IsNullOrEmpty( semaphoreName ) )
+         {
+            // No cancellation
+            retVal = await this.UseRestorerInParallelWithCancellationWatchingAsync( info, token, restorer, sdkPackageID, sdkPackageVersion );
+         }
+         else
+         {
+            using ( var cancelSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
+            {
+               async Task<Int32> WaitForShutdownSemaphore()
+               {
+                  await ShutdownSemaphoreFactory.CreateAwaiter( semaphoreName ).WaitForShutdownSignal( token );
+                  cancelSource.Cancel();
+                  return -3;
+               }
+
+               var shutdownTask = WaitForShutdownSemaphore();
+
+               // Use 'await' on maybeResultTask to extract the result - or throw an exception if task failed
+               retVal = await ( await Task.WhenAny(
+                  shutdownTask,
+                  this.UseRestorerInParallelWithCancellationWatchingAsync( info, cancelSource.Token, restorer, sdkPackageID, sdkPackageVersion )
+                  ) );
+            }
+         }
+
+         return retVal;
+      }
+
+      /// <summary>
+      /// This method is called by <see cref="UseRestorerAsync"/> in order to execute the actual task of this program.
+      /// The <paramref name="token"/> passed to this method will turn into canceled state when cancellation signal from named semaphore/file is noticed.
+      /// </summary>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
+      /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs, or when cancellation signal from named semaphore/file is noticed.</param>
+      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="PerformWithConfigAsync"/>.</param>
+      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
+      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="PerformWithConfigAsync"/>.</param>
+      /// <returns>The return value for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</returns>
+      protected abstract Task<Int32> UseRestorerInParallelWithCancellationWatchingAsync(
+         ConfigurationInformation<TCommandLineConfiguration> info,
+         CancellationToken token,
+         BoundRestoreCommandUser restorer,
+         String sdkPackageID,
+         String sdkPackageVersion
+         );
+
+   }
+
+   /// <summary>
    /// This class enhances <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}"/> with automatically generated documentation.
    /// </summary>
    /// <typeparam name="TCommandLineConfiguration">The actual type that is the configuration for the program.</typeparam>

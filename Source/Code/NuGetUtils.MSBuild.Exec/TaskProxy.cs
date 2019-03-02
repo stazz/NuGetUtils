@@ -100,8 +100,6 @@ namespace NuGetUtils.MSBuild.Exec
          Boolean retVal;
          try
          {
-            var shutdownSemaphoreName = "NuGetMSBuildExecShutdownSemaphore_" + StringConversions.EncodeBase64( Guid.NewGuid().ToByteArray(), true );
-
             var returnCode = await this._processMonitor.CallProcessAndStreamOutputAsync(
                "NuGetUtils.MSBuild.Exec.Perform",
                new PerformConfiguration<String>
@@ -116,7 +114,7 @@ namespace NuGetUtils.MSBuild.Exec
                   MethodToken = this._entrypoint.MethodToken,
                   AssemblyPath = this._initializationArgs.AssemblyPath,
 
-                  ShutdownSemaphoreName = shutdownSemaphoreName,
+                  ShutdownSemaphoreName = NuGetUtilsExecProcessMonitor.CreateNewShutdownSemaphoreName(),
                   ReturnValuePath = tempFileLocation,
                   InputProperties = new JObject(
                      this._propertyInfos
@@ -125,8 +123,6 @@ namespace NuGetUtils.MSBuild.Exec
                      ).ToString( Formatting.None ),
                },
                this._cancellationTokenSource.Token,
-               shutdownSemaphoreName,
-               TimeSpan.FromSeconds( 1 ),
                be == null ? default( Func<String, Boolean, Task> ) : ( line, isError ) =>
                {
                   // TODO log to IBuildEngine

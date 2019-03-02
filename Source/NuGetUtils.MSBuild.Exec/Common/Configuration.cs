@@ -18,6 +18,7 @@
 using NuGetUtils.Lib.Exec.Agnostic;
 using NuGetUtils.Lib.Restore.Agnostic;
 using NuGetUtils.Lib.Tool.Agnostic;
+using NuGetUtils.MSBuild.Exec.Common;
 using System;
 using System.IO;
 using System.Text;
@@ -77,6 +78,8 @@ namespace NuGetUtils.MSBuild.Exec.Common
       /// <inheritdoc />
       public Int32? MethodToken { get; set; }
 
+      public String ShutdownSemaphoreName { get; set; }
+
 #if !NET46
 
       /// <inheritdoc />
@@ -98,5 +101,15 @@ namespace NuGetUtils.MSBuild.Exec.Common
       {
          return new StreamWriter( path.OpenFileToWriteOrStandardOutput(), new UTF8Encoding( false, false ) );
       }
+   }
+}
+
+public static partial class E_NuGetUtils
+{
+   public static Boolean ValidateDefaultNuGetExecutionConfiguration<TLogLevel>(
+      this DefaultNuGetExecutionConfiguration<TLogLevel> config
+      )
+   {
+      return !String.IsNullOrEmpty( config.ShutdownSemaphoreName );
    }
 }

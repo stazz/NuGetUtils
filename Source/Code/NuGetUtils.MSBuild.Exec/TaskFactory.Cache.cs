@@ -27,6 +27,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
 
@@ -74,7 +75,8 @@ namespace NuGetUtils.MSBuild.Exec
       public NuGetUtilsExecProcessMonitor ProcessMonitor { get; }
 
       public async Task<EnvironmentValue> DetectEnvironmentAsync(
-         EnvironmentKeyInfo keyInfo
+         EnvironmentKeyInfo keyInfo,
+         CancellationToken token
          )
       {
          return await this._environments.GetOrAdd( keyInfo, theKeyInfo => new UtilPack.AsyncLazy<EnvironmentValue>( async () =>
@@ -96,9 +98,13 @@ namespace NuGetUtils.MSBuild.Exec
                   PackageID = packageIDIsSelf ? null : key.PackageID,
                   PackageVersion = key.PackageVersion,
                   PackageIDIsSelf = packageIDIsSelf,
-                  ProjectFilePath = theKeyInfo.ProjectFilePath
+                  ProjectFilePath = theKeyInfo.ProjectFilePath,
+
+                  ShutdownSemaphoreName = NuGetUtilsExecProcessMonitor.CreateNewShutdownSemaphoreName(),
                   // ReturnValuePath, RestoreSDKPackage is not used by Discover program.
-               } );
+               },
+               token
+               );
             var result = env.GetFirstOrDefault();
             if ( result == null )
             {
@@ -112,7 +118,8 @@ namespace NuGetUtils.MSBuild.Exec
       public async Task<InspectionValue> InspectPackageAsync(
          EnvironmentValue environment,
          InspectionKey key,
-         Boolean restoreSDKPackage
+         Boolean restoreSDKPackage,
+         CancellationToken token
          )
       {
          return await this._inspections.GetOrAdd( key, theKey => new UtilPack.AsyncLazy<InspectionValue>( async () =>
@@ -134,11 +141,15 @@ namespace NuGetUtils.MSBuild.Exec
                   AssemblyPath = key.AssemblyPath,
                   EntrypointTypeName = key.EntrypointTypeName,
                   EntrypointMethodName = key.EntrypointMethodName,
+
+                  ShutdownSemaphoreName = NuGetUtilsExecProcessMonitor.CreateNewShutdownSemaphoreName(),
                   // ReturnValuePath is not used by Inspect program
 #if !NET46
                   RestoreSDKPackage = restoreSDKPackage
 #endif
-               } );
+               },
+               token
+               );
             var result = env.GetFirstOrDefault();
             if ( result == null )
             {

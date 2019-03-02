@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using UtilPack;
@@ -135,63 +136,79 @@ namespace NuGetUtils.MSBuild.Exec
          InitializationArgs args
          )
       {
-         var be = args.BuildEngine;
-         var projectFilePath = be?.ProjectFileOfTaskNode;
-         var env = await _cache.DetectEnvironmentAsync( new EnvironmentKeyInfo(
-            new EnvironmentKey(
-               args.Framework,
-               args.RuntimeID,
-               args.SDKPackageID,
-               args.SDKPackageVersion,
-               args.SettingsLocation,
-               args.PackageIDIsSelf ? projectFilePath : args.PackageID,
-               args.PackageVersion
-            ),
-            args.PackageIDIsSelf,
-            projectFilePath
-            ) );
-         InitializationResult initializationResult = null;
-         if ( env.Errors.Length > 0 )
+         using ( var cancellationTokenSource = new CancellationTokenSource() )
          {
-            if ( be == null )
+            var token = cancellationTokenSource.Token;
+            void OnCancel( Object sender, ConsoleCancelEventArgs e )
             {
-               Console.Error.WriteLine( "Errors in environment detection: " + String.Join( ";", env.Errors ) );
+               cancellationTokenSource.Cancel();
             }
-            else
-            {
-               // TODO log based on error codes
-            }
-            initializationResult = null;
-         }
-         else
-         {
-            var inspection = await _cache.InspectPackageAsync( env, new InspectionKey(
-               env.ThisFramework,
-               args.SettingsLocation,
-               env.PackageID,
-               env.PackageVersion,
-               args.AssemblyPath,
-               args.TypeName,
-               args.MethodName
-               ),
-               args.RestoreSDKPackage
-               );
-            var typeGenResult = TaskTypeGenerator.Instance.GenerateTaskType(
-               true,
-               inspection.InputParameters,
-               inspection.OutputParameters
-               );
+            Console.CancelKeyPress += OnCancel;
 
-            initializationResult = new InitializationResult(
-               typeGenResult,
-               () => (ITask) typeGenResult.GeneratedType.GetTypeInfo().DeclaredConstructors.First().Invoke( new[]
+            using ( var usingHelper = new UsingHelper( () => Console.CancelKeyPress -= OnCancel ) )
+            {
+
+               var be = args.BuildEngine;
+               var projectFilePath = be?.ProjectFileOfTaskNode;
+               var env = await _cache.DetectEnvironmentAsync( new EnvironmentKeyInfo(
+                  new EnvironmentKey(
+                     args.Framework,
+                     args.RuntimeID,
+                     args.SDKPackageID,
+                     args.SDKPackageVersion,
+                     args.SettingsLocation,
+                     args.PackageIDIsSelf ? projectFilePath : args.PackageID,
+                     args.PackageVersion
+                  ),
+                  args.PackageIDIsSelf,
+                  projectFilePath
+                  ),
+                  token );
+               InitializationResult initializationResult = null;
+               if ( env.Errors.Length > 0 )
                {
-                  new TaskProxy(_cache.ProcessMonitor, args, env, inspection, typeGenResult)
-               } )
-               );
-         }
+                  if ( be == null )
+                  {
+                     Console.Error.WriteLine( "Errors in environment detection: " + String.Join( ";", env.Errors ) );
+                  }
+                  else
+                  {
+                     // TODO log based on error codes
+                  }
+                  initializationResult = null;
+               }
+               else
+               {
+                  var inspection = await _cache.InspectPackageAsync( env, new InspectionKey(
+                     env.ThisFramework,
+                     args.SettingsLocation,
+                     env.PackageID,
+                     env.PackageVersion,
+                     args.AssemblyPath,
+                     args.TypeName,
+                     args.MethodName
+                     ),
+                     args.RestoreSDKPackage,
+                     token
+                     );
+                  var typeGenResult = TaskTypeGenerator.Instance.GenerateTaskType(
+                     true,
+                     inspection.InputParameters,
+                     inspection.OutputParameters
+                     );
 
-         return initializationResult;
+                  initializationResult = new InitializationResult(
+                     typeGenResult,
+                     () => (ITask) typeGenResult.GeneratedType.GetTypeInfo().DeclaredConstructors.First().Invoke( new[]
+                     {
+                  new TaskProxy(_cache.ProcessMonitor, args, env, inspection, typeGenResult)
+                     } )
+                     );
+               }
+
+               return initializationResult;
+            }
+         }
       }
 
       private sealed class InitializationResult

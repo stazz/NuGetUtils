@@ -50,6 +50,7 @@ public static partial class E_NuGetUtils
       this InspectConfiguration<TLogLevel> configuration
       )
    {
-      return !String.IsNullOrEmpty( configuration.InspectFilePath );
+      return configuration.ValidateDefaultNuGetExecutionConfiguration()
+         && !String.IsNullOrEmpty( configuration.InspectFilePath );
    }
 }

@@ -19,21 +19,21 @@ namespace NuGetUtils.MSBuild.Exec
    public static class ProcessMonitor
    {
 
-      public static (Process Process, StringBuilder StdOut, StringBuilder StdErr) CreateProcess(
-         String fileName,
-         String arguments
-         )
-      {
-         var stdout = new StringBuilder();
-         var stderr = new StringBuilder();
+      //public static (Process Process, StringBuilder StdOut, StringBuilder StdErr) CreateProcess(
+      //   String fileName,
+      //   String arguments
+      //   )
+      //{
+      //   var stdout = new StringBuilder();
+      //   var stderr = new StringBuilder();
 
-         return (CreateProcess(
-            fileName,
-            arguments,
-            onStdOutLine: outLine => stdout.Append( outLine ).Append( '\n' ),
-            onStdErrLine: errLine => stderr.Append( errLine ).Append( '\n' )
-            ), stdout, stderr);
-      }
+      //   return (CreateProcess(
+      //      fileName,
+      //      arguments,
+      //      onStdOutLine: outLine => stdout.Append( outLine ).Append( '\n' ),
+      //      onStdErrLine: errLine => stderr.Append( errLine ).Append( '\n' )
+      //      ), stdout, stderr);
+      //}
 
       public static Process CreateProcess(
          String fileName,
@@ -100,35 +100,35 @@ namespace NuGetUtils.MSBuild.Exec
          }
       }
 
-      public static async Task<(Int32 exitCode, StringBuilder StdOut, StringBuilder StdErr)> ExecuteAsFileAtThisPath(
-         this String fileName,
-         String arguments,
-         Func<StreamWriter, Task> stdinWriter = null
-         )
-      {
-         (var p, var stdout, var stderr) = CreateProcess( fileName, arguments );
-         using ( p )
-         {
-            await StartProcessAsync( p, stdinWriter );
+      //public static async Task<(Int32 exitCode, StringBuilder StdOut, StringBuilder StdErr)> ExecuteAsFileAtThisPath(
+      //   this String fileName,
+      //   String arguments,
+      //   Func<StreamWriter, Task> stdinWriter = null
+      //   )
+      //{
+      //   (var p, var stdout, var stderr) = CreateProcess( fileName, arguments );
+      //   using ( p )
+      //   {
+      //      await StartProcessAsync( p, stdinWriter );
 
-            while ( !p.WaitForExit( 0 ) )
-            {
-               await Task.Delay( 100 );
-            }
+      //      while ( !p.WaitForExit( 0 ) )
+      //      {
+      //         await Task.Delay( 100 );
+      //      }
 
-            // Process.HasExited has following documentation:
-            // When standard output has been redirected to asynchronous event handlers, it is possible that output processing will
-            // not have completed when this property returns true. To ensure that asynchronous event handling has been completed,
-            // call the WaitForExit() overload that takes no parameter before checking HasExited.
-            p.WaitForExit();
-            while ( !p.HasExited )
-            {
-               await Task.Delay( 50 );
-            }
+      //      // Process.HasExited has following documentation:
+      //      // When standard output has been redirected to asynchronous event handlers, it is possible that output processing will
+      //      // not have completed when this property returns true. To ensure that asynchronous event handling has been completed,
+      //      // call the WaitForExit() overload that takes no parameter before checking HasExited.
+      //      p.WaitForExit();
+      //      while ( !p.HasExited )
+      //      {
+      //         await Task.Delay( 50 );
+      //      }
 
-            return (p.ExitCode, stdout, stderr);
-         }
-      }
+      //      return (p.ExitCode, stdout, stderr);
+      //   }
+      //}
    }
 
    public static class ProcessMonitorWithGracefulCancelability
@@ -167,7 +167,7 @@ namespace NuGetUtils.MSBuild.Exec
                   {
                      // Signal the process to shut down
                      shutdownSignalledTime = DateTime.UtcNow;
-                     cancelTask = shutdownSemaphore.SignalAsync();
+                     cancelTask = shutdownSemaphore.SignalAsync( default ); // Don't pass 'token' here as it is already canceled.
                   }
                }
                catch
@@ -256,76 +256,40 @@ namespace NuGetUtils.MSBuild.Exec
 
       }
 
-      //private static Semaphore CreateSemaphore(
-      //   //         String argumentName,
-      //   String semaphoreName,
-      //   // ref String argsString, 
-      //   Boolean isOptional
-      //   )
-      //{
-
-
-      //   Semaphore retVal = null;
-      //   //if ( !String.IsNullOrEmpty( argumentName ) )
-      //   //{
-      //   //String semaName = null;
-      //   try
-      //   {
-      //      retVal = CreateSemaphore( semaphoreName );
-      //   }
-      //   catch
-      //   {
-      //      // Certain platforms can give "The named version of this synchronization primitive is not supported on this platform." error
-      //      if ( !isOptional )
-      //      {
-      //         throw;
-      //      }
-      //   }
-
-      //   //if ( retVal != null && !String.IsNullOrEmpty( semaName ) )
-      //   //{
-      //   //   argsString += " " + EscapeArgumentString( String.Format( "{0}={1}", argumentName, semaName ) );
-      //   //}
-      //   //}
-
-      //   return retVal;
-      //}
-
-      //private static Semaphore CreateSemaphore( String semaphoreName )
-      //{
-      //   Semaphore retVal;
-      //   do
-      //   {
-      //      semaphoreName = @"Global\" + semaphoreName;
-      //      retVal = new Semaphore( 0, Int32.MaxValue, semaphoreName, out var createdNewSemaphore );
-      //      if ( !createdNewSemaphore )
-      //      {
-      //         retVal.DisposeSafely();
-      //         retVal = null;
-      //      }
-      //   } while ( retVal == null );
-
-      //   return retVal;
-      //}
-
-      private static String EscapeArgumentString( String argString )
-      {
-         if ( argString.IndexOf( "\"" ) >= 0 )
-         {
-            argString = "\"" + argString.Replace( "\"", "\\\"" );
-         }
-
-         return argString;
-      }
-
-      public static async Task<Int32?> ExecuteAsFileAtThisPathWithCancelabilityAndStandardRedirects(
+      public static async Task<(Int32? ReturnCode, StringBuilder StdOut, StringBuilder StdErr)> ExecuteAsFileAtThisPathWithCancelabilityCollectingOutputToString(
          this String fileName,
          String arguments,
          CancellationToken token,
          String shutdownSemaphoreName,
          TimeSpan shutdownSemaphoreMaxWaitTime,
-         Func<String, Boolean, Task> onStdOutOrErrLine = null,
          Func<StreamWriter, Task> stdinWriter = null
+         )
+      {
+         var stdout = new StringBuilder();
+         var stderr = new StringBuilder();
+         var retVal = await fileName.ExecuteAsFileAtThisPathWithCancelabilityAndRedirects(
+            arguments,
+            token,
+            shutdownSemaphoreName,
+            shutdownSemaphoreMaxWaitTime,
+            stdinWriter: stdinWriter,
+            onStdOutOrErrLine: ( line, isError ) =>
+            {
+               ( isError ? stderr : stdout ).Append( line ).Append( '\n' );
+               return null;
+            } );
+
+         return (retVal, stdout, stderr);
+      }
+
+      public static async Task<Int32?> ExecuteAsFileAtThisPathWithCancelabilityAndRedirects(
+         this String fileName,
+         String arguments,
+         CancellationToken token,
+         String shutdownSemaphoreName,
+         TimeSpan shutdownSemaphoreMaxWaitTime,
+         Func<StreamWriter, Task> stdinWriter = null,
+         Func<String, Boolean, Task> onStdOutOrErrLine = null
          )
       {
          var processOutput = new ConcurrentQueue<(Boolean IsError, DateTime Timestamp, String Data)>();
@@ -398,27 +362,32 @@ namespace NuGetUtils.MSBuild.Exec
    {
 
       private readonly String _thisAssemblyDirectory;
+      private readonly TimeSpan _shutdownSemaphoreWaitTime;
 
       public NuGetUtilsExecProcessMonitor()
       {
          this._thisAssemblyDirectory = Path.GetDirectoryName( Path.GetFullPath( new Uri( this.GetType().GetTypeInfo().Assembly.CodeBase ).LocalPath ) );
+         this._shutdownSemaphoreWaitTime = TimeSpan.FromSeconds( 1 );
       }
-
-      // TODO here: similar method as this but redirect stdout and stdin to console instead of string builder
 
       public async Task<EitherOr<TOutput, String>> CallProcessAndGetResultAsync<TInput, TOutput>(
          String assemblyName,
-         TInput input
+         TInput input,
+         CancellationToken token
          )
+         where TInput : DefaultNuGetExecutionConfiguration<String>
       {
 
          (var stdinWriter, var stdinSuccess) = GetStdInWriter( input );
          (var exitCode, var stdout, var stderr) = await
             this.GetProcessFilePath( ref assemblyName )
-            .ExecuteAsFileAtThisPath(
+            .ExecuteAsFileAtThisPathWithCancelabilityCollectingOutputToString(
                GetProcessArguments( assemblyName ),
+               token,
+               input.ShutdownSemaphoreName,
+               this._shutdownSemaphoreWaitTime,
                stdinWriter: stdinWriter
-            );
+               );
 
          String GetErrorString()
          {
@@ -437,19 +406,18 @@ namespace NuGetUtils.MSBuild.Exec
          String assemblyName,
          TInput input,
          CancellationToken token,
-         String shutdownSemaphoreName,
-         TimeSpan shutdownSemaphoreMaxWaitTime,
          Func<String, Boolean, Task> onStdOutOrErrLine
          )
+         where TInput : DefaultNuGetExecutionConfiguration<String>
       {
          (var stdinWriter, var stdinSuccess) = GetStdInWriter( input );
 
          var returnCode = await this.GetProcessFilePath( ref assemblyName )
-            .ExecuteAsFileAtThisPathWithCancelabilityAndStandardRedirects(
+            .ExecuteAsFileAtThisPathWithCancelabilityAndRedirects(
                GetProcessArguments( assemblyName ),
                token,
-               shutdownSemaphoreName,
-               shutdownSemaphoreMaxWaitTime,
+               input.ShutdownSemaphoreName,
+               this._shutdownSemaphoreWaitTime,
                stdinWriter: stdinWriter,
                onStdOutOrErrLine: onStdOutOrErrLine
                );
@@ -457,6 +425,11 @@ namespace NuGetUtils.MSBuild.Exec
          return stdinSuccess() ?
             returnCode :
             default;
+      }
+
+      public static String CreateNewShutdownSemaphoreName()
+      {
+         return "NuGetMSBuildExecShutdownSemaphore_" + StringConversions.EncodeBase64( Guid.NewGuid().ToByteArray(), true );
       }
 
       private String GetProcessFilePath(

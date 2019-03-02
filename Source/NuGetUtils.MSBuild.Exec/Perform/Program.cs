@@ -39,11 +39,17 @@ namespace NuGetUtils.MSBuild.Exec.Perform
    }
 
 
-   internal sealed class NuGetProgram : NuGetRestoringProgram<TConfiguration, DefaultConfigurationConfiguration>
+   internal sealed class NuGetProgram : NuGetRestoringProgramWithShutdownCancellation<TConfiguration, DefaultConfigurationConfiguration>
    {
       internal const String EXEC_ARGS_SEPARATOR = "--";
 
-      protected override async Task<Int32> UseRestorerAsync(
+      public NuGetProgram()
+         : base( config => config.ShutdownSemaphoreName )
+      {
+
+      }
+
+      protected override async Task<Int32> UseRestorerInParallelWithCancellationWatchingAsync(
          ConfigurationInformation<TConfiguration> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
@@ -53,17 +59,7 @@ namespace NuGetUtils.MSBuild.Exec.Perform
       {
 
          var config = info.Configuration;
-         async Task<EitherOr<Object, NoExecutableMethodFound>> WaitForShutdownSemaphore()
-         {
-            await ShutdownSemaphoreFactory.CreateAwaiter( config.ShutdownSemaphoreName ).WaitForShutdownSignal( token );
-            return default;
-         }
-
-         var shutdownTask = WaitForShutdownSemaphore();
-
-         var maybeResultTask = await Task.WhenAny(
-            shutdownTask,
-            config.ExecuteMethodAndSerializeReturnValue(
+         var maybeResult = await config.ExecuteMethodAndSerializeReturnValue(
                token,
                restorer,
                type => JsonConvert.DeserializeObject( config.InputProperties, type ),
@@ -73,15 +69,9 @@ namespace NuGetUtils.MSBuild.Exec.Perform
                sdkPackageID,
                sdkPackageVersion
 #endif
-               )
-            );
+               );
 
-         // Use 'await' on maybeResultTask to extract the result - or throw an exception if task failed
-         var maybeResult = await maybeResultTask;
-
-         return ReferenceEquals( maybeResultTask, shutdownTask ) ?
-            -4 : // Canceled
-            ( maybeResult.IsFirst ? 0 : -3 );
+         return maybeResult.IsFirst ? 0 : -4;
 
       }
 
@@ -90,7 +80,7 @@ namespace NuGetUtils.MSBuild.Exec.Perform
          )
       {
          return info.Configuration.ValidateConfiguration()
-            && !String.IsNullOrEmpty( info.Configuration.ShutdownSemaphoreName );
+            && info.Configuration.ValidatePerformConfiguration();
       }
 
       protected override String GetDocumentation()

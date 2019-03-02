@@ -47,6 +47,7 @@ public static partial class E_NuGetUtils
       this DiscoverConfiguration<TLogLevel> configuration
       )
    {
-      return !String.IsNullOrEmpty( configuration.DiscoverFilePath );
+      return configuration.ValidateDefaultNuGetExecutionConfiguration()
+         && !String.IsNullOrEmpty( configuration.DiscoverFilePath );
    }
 }
