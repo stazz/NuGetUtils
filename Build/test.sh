@@ -16,7 +16,7 @@ dotnet pack \
   "${GIT_ROOT}/Source/NuGetUtils.MSBuild.Exec/TestPackage"
 
 # Now install the package
-rm -rf /root/.nuget/packages/nugetutils.msbuild.exec
+rm -rf /root/.nuget/packages/nugetutils.msbuild.exec.testpackage
 LOCAL_TEMP_NUGET_SOURCE="${BASE_ROOT}/local_nuget_repo"
 mkdir "${LOCAL_TEMP_NUGET_SOURCE}"
 dotnet nuget push \
