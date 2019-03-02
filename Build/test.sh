@@ -7,10 +7,6 @@ SCRIPTDIR=$(dirname "$SCRIPTPATH")
 GIT_ROOT=$(readlink -f "${SCRIPTDIR}/..")
 BASE_ROOT=$(readlink -f "${GIT_ROOT}/..")
 
-if [[ "${RELATIVE_CS_OUTPUT}" ]]; then
-  CS_OUTPUT=$(readlink -f "${BASE_ROOT}/${RELATIVE_CS_OUTPUT}")
-fi
-
 # Package the project used in tests via NuGet 
 dotnet pack \
   -nologo \
@@ -20,6 +16,7 @@ dotnet pack \
   "${GIT_ROOT}/Source/NuGetUtils.MSBuild.Exec/TestPackage"
 
 # Now install the package
+rm -rf /root/.nuget/packages/nugetutils.msbuild.exec
 LOCAL_TEMP_NUGET_SOURCE="${BASE_ROOT}/local_nuget_repo"
 mkdir "${LOCAL_TEMP_NUGET_SOURCE}"
 dotnet nuget push \
