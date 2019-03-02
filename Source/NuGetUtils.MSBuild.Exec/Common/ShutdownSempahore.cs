@@ -58,9 +58,18 @@ namespace NuGetUtils.MSBuild.Exec.Common
 
       public static ShutdownSemaphoreAwaiter CreateAwaiter( String semaphoreName )
       {
-         return Semaphore.TryOpenExisting( SEMAPHORE_PREFIX + semaphoreName, out var semaphore ) ?
-            (ShutdownSemaphoreAwaiter) new AwaiterByWrapper( semaphore ) :
-            new AwaiterByFile( GetFilePath( semaphoreName ) );
+         Semaphore semaphore = null;
+         try
+         {
+            Semaphore.TryOpenExisting( SEMAPHORE_PREFIX + semaphoreName, out semaphore );
+         }
+         catch ( PlatformNotSupportedException )
+         {
+
+         }
+         return semaphore == null ?
+            (ShutdownSemaphoreAwaiter) new AwaiterByFile( GetFilePath( semaphoreName ) ) :
+            new AwaiterByWrapper( semaphore );
       }
 
       private static String GetFilePath( String semaphoreName )
