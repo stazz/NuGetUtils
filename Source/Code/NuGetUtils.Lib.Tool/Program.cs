@@ -408,9 +408,9 @@ namespace NuGetUtils.Lib.Tool
       /// </summary>
       /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
       /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs.</param>
-      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="PerformWithConfigAsync"/>.</param>
-      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
-      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="PerformWithConfigAsync"/>.</param>
+      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
+      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
+      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
       /// <returns>The return value for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</returns>
       protected override async Task<Int32> UseRestorerAsync(
          ConfigurationInformation<TCommandLineConfiguration> info,
@@ -457,9 +457,9 @@ namespace NuGetUtils.Lib.Tool
       /// </summary>
       /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
       /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs, or when cancellation signal from named semaphore/file is noticed.</param>
-      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="PerformWithConfigAsync"/>.</param>
-      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
-      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="PerformWithConfigAsync"/>.</param>
+      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
+      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
+      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
       /// <returns>The return value for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</returns>
       protected abstract Task<Int32> UseRestorerInParallelWithCancellationWatchingAsync(
          ConfigurationInformation<TCommandLineConfiguration> info,
