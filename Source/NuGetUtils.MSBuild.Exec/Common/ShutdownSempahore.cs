@@ -175,16 +175,15 @@ namespace NuGetUtils.MSBuild.Exec.Common
             this._stream = File.Open( filePath, FileMode.Open, FileAccess.Read, FileShare.Read );
          }
 
-         public Task WaitForShutdownSignal( CancellationToken token )
+         public async Task WaitForShutdownSignal( CancellationToken token )
          {
-            // Passing token to stream only checks for cancellation on .Read method entrypoint.
-            // Once it goes into native code, the cancellation token cancel request is not registered.
-            // So, use our own cancellation mechanism.
-            using ( token.Register( () => this.DisposeSafely() ) )
+            while (
+               !token.IsCancellationRequested
+               && this._stream.Length == 0
+               )
             {
-               return this._stream.ReadAtLeastAsync( new Byte[1], 0, 1, 1 );
+               await Task.Delay( 100 );
             }
-
          }
 
          protected override void Dispose( Boolean disposing )
