@@ -86,18 +86,25 @@ namespace NuGetUtils.MSBuild.Exec
          }
          catch ( Exception exc )
          {
-            taskFactoryLoggingHost?.LogErrorEvent( new BuildErrorEventArgs(
-               "subcat",
-               "code",
-               "file",
-               0,
-               0,
-               0,
-               0,
-               $"Internal error: {exc.Message}",
-               "helpKeyword",
-               "senderName"
-               ) );
+            if ( taskFactoryLoggingHost == null )
+            {
+               Console.Error.WriteLine( "Error in initialization: " + exc );
+            }
+            else
+            {
+               taskFactoryLoggingHost?.LogErrorEvent( new BuildErrorEventArgs(
+                  "subcat",
+                  "code",
+                  "file",
+                  0,
+                  0,
+                  0,
+                  0,
+                  $"Internal error: {exc.Message}",
+                  "helpKeyword",
+                  "senderName"
+                  ) );
+            }
          }
 
          this._initResult = initResult;
@@ -146,10 +153,13 @@ namespace NuGetUtils.MSBuild.Exec
          InitializationResult initializationResult = null;
          if ( env.Errors.Length > 0 )
          {
-            if ( be != null )
+            if ( be == null )
+            {
+               Console.Error.WriteLine( "Errors in environment detection: " + String.Join( ";", env.Errors ) );
+            }
+            else
             {
                // TODO log based on error codes
-
             }
             initializationResult = null;
          }
