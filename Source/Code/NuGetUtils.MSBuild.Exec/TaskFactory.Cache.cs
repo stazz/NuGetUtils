@@ -153,7 +153,7 @@ namespace NuGetUtils.MSBuild.Exec
             var result = env.GetFirstOrDefault();
             if ( result == null )
             {
-               throw new Exception( $"Errors occurred during environment detection: { env.GetSecondOrDefault() }." );
+               throw new Exception( $"Errors occurred during package inspection: { env.GetSecondOrDefault() }." );
             }
 
             return new InspectionValue( result );

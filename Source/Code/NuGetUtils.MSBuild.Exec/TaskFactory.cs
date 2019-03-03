@@ -35,20 +35,23 @@ namespace NuGetUtils.MSBuild.Exec
 {
    public sealed class NuGetExecutionTaskFactory : ITaskFactory
    {
-      private const String PACKAGE_ID = "PackageID";
-      private const String PACKAGE_ID_IS_SELF = "PackageIDIsSelf";
-      private const String PACKAGE_VERSION = "PackageVersion";
-      private const String ASSEMBLY_PATH = "AssemblyPath";
-      private const String NUGET_FW = "NuGetFramework";
-      private const String NUGET_FW_PACKAGE_ID = "NuGetFrameworkPackageID";
-      private const String NUGET_FW_PACKAGE_VERSION = "NuGetFrameworkPackageVersion";
-      private const String NUGET_RID = "NuGetPlatformRID";
-      private const String NUGET_RID_CATALOG_PACKAGE_ID = "NuGetPlatformRIDCatalogPackageID";
-      private const String NUGET_CONFIG_FILE = "NuGetConfigurationFile";
-      private const String COPY_TO_TEMPORARY_FOlDER_BEFORE_LOAD = "CopyToFolderBeforeLoad";
-      private const String TASK_NAME = "EntryPointTypeName";
-      private const String TASK_METHOD_NAME = "EntryPointMethodName";
-      private const String UNMANAGED_ASSEMBLIES_MAP = "UnmanagedAssemblyReferenceMap";
+      // TODO make use of the 3 commented-out consts at some point.
+      internal const String PACKAGE_ID = "PackageID";
+      internal const String PACKAGE_ID_IS_SELF = "PackageIDIsSelf";
+      internal const String PACKAGE_VERSION = "PackageVersion";
+      internal const String ASSEMBLY_PATH = "AssemblyPath";
+      internal const String NUGET_FW = "NuGetFramework";
+      internal const String NUGET_FW_PACKAGE_ID = "NuGetFrameworkPackageID";
+      internal const String NUGET_FW_PACKAGE_VERSION = "NuGetFrameworkPackageVersion";
+      internal const String NUGET_RID = "NuGetPlatformRID";
+      //private const String NUGET_RID_CATALOG_PACKAGE_ID = "NuGetPlatformRIDCatalogPackageID";
+      internal const String NUGET_CONFIG_FILE = "NuGetConfigurationFile";
+      //private const String COPY_TO_TEMPORARY_FOlDER_BEFORE_LOAD = "CopyToFolderBeforeLoad";
+      internal const String TASK_NAME = "EntryPointTypeName";
+      internal const String TASK_METHOD_NAME = "EntryPointMethodName";
+      //private const String UNMANAGED_ASSEMBLIES_MAP = "UnmanagedAssemblyReferenceMap";
+
+      public const String FACTORY_NAME = nameof( NuGetExecutionTaskFactory );
 
       // Static in order to share state between task factory usage in different build files.
       private static readonly NuGetExecutionCache _cache = new NuGetExecutionCache();
@@ -93,17 +96,10 @@ namespace NuGetUtils.MSBuild.Exec
             }
             else
             {
-               taskFactoryLoggingHost?.LogErrorEvent( new BuildErrorEventArgs(
-                  "subcat",
-                  "code",
-                  "file",
-                  0,
-                  0,
-                  0,
-                  0,
-                  $"Internal error: {exc.Message}",
-                  "helpKeyword",
-                  "senderName"
+               taskFactoryLoggingHost.LogErrorEvent( "NMSBT001".AsNuGetMSBuildError(
+                  taskFactoryLoggingHost.ProjectFileOfTaskNode,
+                  null,
+                  exc: exc
                   ) );
             }
          }
@@ -113,7 +109,7 @@ namespace NuGetUtils.MSBuild.Exec
          return initResult != null;
       }
 
-      public String FactoryName => nameof( NuGetExecutionTaskFactory );
+      public String FactoryName => FACTORY_NAME;
 
       public TaskPropertyInfo[] GetTaskParameters()
       {
@@ -173,20 +169,23 @@ namespace NuGetUtils.MSBuild.Exec
                   }
                   else
                   {
-                     // TODO log based on error codes
+                     foreach ( var error in env.Errors.Select( errorCode => errorCode.AsNuGetMSBuildError( projectFilePath, args ) ) )
+                     {
+                        be.LogErrorEvent( error );
+                     }
                   }
                   initializationResult = null;
                }
                else
                {
                   var inspection = await _cache.InspectPackageAsync( env, new InspectionKey(
-                     env.ThisFramework,
-                     args.SettingsLocation,
-                     env.PackageID,
-                     env.PackageVersion,
-                     args.AssemblyPath,
-                     args.TypeName,
-                     args.MethodName
+                        env.ThisFramework,
+                        args.SettingsLocation,
+                        env.PackageID,
+                        env.PackageVersion,
+                        args.AssemblyPath,
+                        args.TypeName,
+                        args.MethodName
                      ),
                      args.RestoreSDKPackage,
                      token
@@ -227,6 +226,58 @@ namespace NuGetUtils.MSBuild.Exec
          public Func<ITask> CreateTaskInstance { get; }
       }
    }
+
+   public static partial class NuGetUtilsExtensions
+   {
+      internal static BuildErrorEventArgs AsNuGetMSBuildError(
+         this String errorCode,
+         String projectFilePath,
+         InitializationArgs args,
+         Exception exc = null
+         )
+      {
+         String errorMessage;
+         switch ( errorCode )
+         {
+            case "NMSBT001":
+               errorMessage = $"Exception in initialization: {exc}";
+               break;
+            case "NMSBT002":
+               errorMessage = $"Failed to find main package, check that you have suitable \"{NuGetExecutionTaskFactory.PACKAGE_ID}\" or \"{NuGetExecutionTaskFactory.PACKAGE_ID_IS_SELF}\" element in task body.";
+               break;
+            case "NMSBT003":
+               errorMessage = $"The \"{NuGetExecutionTaskFactory.PACKAGE_ID_IS_SELF}\" element is not supported when the caller file of this task factory is not known.";
+               break;
+            case "NMSBT004":
+               errorMessage = $"Failed to deduce self package ID from file {projectFilePath}.";
+               break;
+            case "NMSBT005":
+               errorMessage = $"The parameters \"{NuGetExecutionTaskFactory.PACKAGE_ID}\" and \"{NuGetExecutionTaskFactory.PACKAGE_ID_IS_SELF}\" are mutually exclusive, please specify exactly one of them.";
+               break;
+            case "NMSBT006":
+               errorMessage = $"Failed to find any package with ID {args.PackageID} which would have {projectFilePath} stored within it.";
+               break;
+            default:
+               errorMessage = $"Unrecognized error code: {errorCode}.";
+               break;
+
+         }
+
+         return new BuildErrorEventArgs(
+            "Task factory",
+            errorCode,
+            null,
+            -1,
+            -1,
+            -1,
+            -1,
+            errorMessage,
+            null,
+            NuGetExecutionTaskFactory.FACTORY_NAME
+            );
+      }
+   }
+
 
    internal sealed class InitializationArgs
    {

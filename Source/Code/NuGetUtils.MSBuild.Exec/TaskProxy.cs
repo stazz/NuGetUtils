@@ -125,7 +125,30 @@ namespace NuGetUtils.MSBuild.Exec
                this._cancellationTokenSource.Token,
                be == null ? default( Func<String, Boolean, Task> ) : ( line, isError ) =>
                {
-                  // TODO log to IBuildEngine
+                  if ( isError )
+                  {
+                     be.LogErrorEvent( new BuildErrorEventArgs(
+                        null,
+                        null,
+                        null,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                        line,
+                        null,
+                        NuGetExecutionTaskFactory.TASK_NAME
+                        ) );
+                  }
+                  else
+                  {
+                     be.LogMessageEvent( new BuildMessageEventArgs(
+                        line,
+                        null,
+                        null,
+                        MessageImportance.High
+                        ) );
+                  }
                   return null;
                }
                );

@@ -22,7 +22,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <NuGetTargetVersion>4.9.2</NuGetTargetVersion>
+    <NuGetTargetVersion>4.9.3</NuGetTargetVersion>
     <!-- This enables things like still having NUGET_XYZ even when referencing NuGet package version x.y.z-something-else -->
     <NuGetTargetVersionDashIndex>$(NuGetTargetVersion.IndexOf('-'))</NuGetTargetVersionDashIndex>
     <NuGetVersionPlain Condition=" '$(NuGetTargetVersionDashIndex)' != '-1' " >$(NuGetTargetVersion.Substring(0, $(NuGetTargetVersion.IndexOf('-'))))</NuGetVersionPlain>

@@ -72,7 +72,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
                // Package ID was specified as self
                if ( String.IsNullOrEmpty( projectFile ) )
                {
-                  errors.Add( "NMSBT005" );
+                  errors.Add( "NMSBT003" );
                }
                else
                {
@@ -90,7 +90,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
                   {
                      // Failed to deduce this package ID
                      // No PackageID element and no PackageIDIsSelf element either
-                     errors.Add( "NMSBT007" );
+                     errors.Add( "NMSBT004" );
                   }
                   else
                   {
@@ -109,7 +109,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
          else if ( packageIDIsSelf )
          {
             packageID = null;
-            errors.Add( "NMSBT008" );
+            errors.Add( "NMSBT005" );
          }
 
          String packageVersion = null;
@@ -133,7 +133,7 @@ namespace NuGetUtils.MSBuild.Exec.Discover
                      .FirstOrDefault();
                   if ( localPackage == null )
                   {
-                     errors.Add( "NMSBT009" );
+                     errors.Add( "NMSBT006" );
                   }
                   else
                   {
