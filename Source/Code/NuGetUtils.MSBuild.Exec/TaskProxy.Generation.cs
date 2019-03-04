@@ -48,7 +48,7 @@ namespace NuGetUtils.MSBuild.Exec
 
          var ab = AssemblyBuilder.DefineDynamicAssembly( new AssemblyName( "NuGetTaskWrapperDynamicAssembly" ), AssemblyBuilderAccess.RunAndCollect );
          var mb = ab.DefineDynamicModule( "NuGetTaskWrapperDynamicAssembly.dll"
-#if !IS_NETSTANDARD
+#if NET46
                , false
 #endif
                );
@@ -261,7 +261,7 @@ namespace NuGetUtils.MSBuild.Exec
 
          // We are ready
          return new TypeGenerationResult( tb.
-#if !IS_NETSTANDARD
+#if NET46
             CreateType()
 #else
             CreateTypeInfo().AsType()

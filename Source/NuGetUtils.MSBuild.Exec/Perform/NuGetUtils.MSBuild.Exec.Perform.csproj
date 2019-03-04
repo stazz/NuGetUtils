@@ -19,6 +19,17 @@
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />
   </ItemGroup>
 
+  <!-- Collect also all NuGet assemblies for .NET Core -->
+  <ItemDefinitionGroup>
+    <PackageReference>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <ProjectReference>
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+
+
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
 </Project>

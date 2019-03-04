@@ -1,4 +1,21 @@
-﻿using Newtonsoft.Json;
+﻿/*
+ * Copyright 2019 Stanislav Muhametsin. All rights Reserved.
+ *
+ * Licensed  under the  Apache License,  Version 2.0  (the "License");
+ * you may not use  this file  except in  compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed  under the  License is distributed on an "AS IS" BASIS,
+ * WITHOUT  WARRANTIES OR CONDITIONS  OF ANY KIND, either  express  or
+ * implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License. 
+ */
+using Newtonsoft.Json;
 using NuGetUtils.Lib.Tool.Agnostic;
 using NuGetUtils.MSBuild.Exec;
 using NuGetUtils.MSBuild.Exec.Common;
@@ -361,12 +378,15 @@ namespace NuGetUtils.MSBuild.Exec
    internal sealed class NuGetUtilsExecProcessMonitor
    {
 
-      private readonly String _thisAssemblyDirectory;
+      private readonly String _toolsDirectory;
       private readonly TimeSpan _shutdownSemaphoreWaitTime;
 
       public NuGetUtilsExecProcessMonitor()
       {
-         this._thisAssemblyDirectory = Path.GetDirectoryName( Path.GetFullPath( new Uri( this.GetType().GetTypeInfo().Assembly.CodeBase ).LocalPath ) );
+         this._toolsDirectory = Path.Combine(
+            Path.GetDirectoryName( Path.GetFullPath( new Uri( this.GetType().GetTypeInfo().Assembly.CodeBase ).LocalPath ) ),
+            NuGetExecutionTaskFactory.TOOLS_DIR
+            );
          this._shutdownSemaphoreWaitTime = TimeSpan.FromSeconds( 1 );
       }
 
@@ -436,7 +456,7 @@ namespace NuGetUtils.MSBuild.Exec
          ref String assemblyName
          )
       {
-         assemblyName = Path.GetFullPath( Path.Combine( this._thisAssemblyDirectory, assemblyName ) + "." +
+         assemblyName = Path.GetFullPath( Path.Combine( this._toolsDirectory, assemblyName ) + "." +
 #if NET46
             "exe"
 #else

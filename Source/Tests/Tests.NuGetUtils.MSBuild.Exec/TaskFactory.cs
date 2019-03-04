@@ -38,12 +38,24 @@ namespace Tests.NuGetUtils.MSBuild.Exec
          // When running non-self-contained processes via dotnet, we must make sure that .runtimeconfig.json file is present
          // Having projects as references does not do that, so we have to do it other way.
          // One such way is just simply copy the .runtimeconfig.json file of this project, and rename as appropriate
+
+         // But first, copy everything under 'tools' folder, since that's how it is in actual production environment
          var thisAssemblyPath = Path.GetFullPath( new Uri( typeof( TaskFactoryTests ).GetTypeInfo().Assembly.CodeBase ).LocalPath );
          var thisAssemblyDirectory = Path.GetDirectoryName( thisAssemblyPath );
+         var toolsDir = Path.Combine( thisAssemblyDirectory, NuGetExecutionTaskFactory.TOOLS_DIR );
+         if ( !Directory.Exists( toolsDir ) )
+         {
+            Directory.CreateDirectory( toolsDir );
+         }
+         foreach ( var fn in Directory.EnumerateFiles( thisAssemblyDirectory, "*.dll", SearchOption.TopDirectoryOnly ) )
+         {
+            File.Copy( fn, Path.Combine( toolsDir, Path.GetFileName( fn ) ), true );
+         }
+
          var thisAssemblyRuntimeConfig = Path.ChangeExtension( thisAssemblyPath, ".runtimeconfig.json" );
          foreach ( var execName in new[] { "Discover", "Inspect", "Perform" } )
          {
-            File.Copy( thisAssemblyRuntimeConfig, Path.Combine( thisAssemblyDirectory, "NuGetUtils.MSBuild.Exec." + execName + ".runtimeconfig.json" ), true );
+            File.Copy( thisAssemblyRuntimeConfig, Path.Combine( toolsDir, "NuGetUtils.MSBuild.Exec." + execName + ".runtimeconfig.json" ), true );
          }
       }
 

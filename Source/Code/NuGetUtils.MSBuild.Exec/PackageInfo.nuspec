@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>NuGetUtils.MSBuild.Exec</id>
+    <version>$PackageVersion$</version>
+    <title>$Title$</title>
+    <authors>Stanislav Muhametsin</authors>
+    <owners>Stanislav Muhametsin</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">Apache-2.0</license>
+    <repository url="https://github.com/stazz/NuGetUtils/tree/develop/Source/NuGetUtils.MSBuild.Exec" type="git" />
+    <projectUrl>https://github.com/stazz/NuGetUtils</projectUrl>
+    <description>Provides easy way to execute NuGet-based MSBuild tasks.</description>
+    <releaseNotes>$PackageReleaseNotes$</releaseNotes>
+    <copyright>Stanislav Muhametsin</copyright>
+    <tags>$PackageTags$</tags>
+    <developmentDependency>true</developmentDependency>
+    <dependencies/>
+  </metadata>
+  <files>
+    <file src="NuGetUtils.MSBuild.Exec\build\*.props" target="build\" />
+    <file src="NuGetUtils.MSBuild.Exec\buildMultiTargeting\*.props" target="buildMultiTargeting\" />
+    
+    <file src="NuGetUtils.MSBuild.Exec\net46\*.dll" exclude="NuGetUtils.MSBuild.Exec\net46\Microsoft.Build.Framework.dll" target="build\net46" />
+    <file src="NuGetUtils.MSBuild.Exec\build\net46\tools\*.dll" target="build\net46\tools" />
+    <file src="NuGetUtils.MSBuild.Exec\build\net46\tools\*.exe*" target="build\net46\tools" />
+
+    <file src="NuGetUtils.MSBuild.Exec\netcoreapp2.1\*.dll" exclude="NuGetUtils.MSBuild.Exec\netcoreapp2.1\Microsoft.Build.Framework.dll;NuGetUtils.MSBuild.Exec\netcoreapp2.1\Newtonsoft.Json.dll" target="build\netcoreapp2.1" />
+    <file src="NuGetUtils.MSBuild.Exec\build\netcoreapp2.1\tools\*.dll" target="build\netcoreapp2.1\tools" />
+    <file src="NuGetUtils.MSBuild.Exec\build\netcoreapp2.1\tools\*.exe*" target="build\netcoreapp2.1\tools" />
+
+    <!--<file src="NuGetUtils.MSBuild.Exec.Discover\net46\*.dll" target="build\net46\tools" />
+    <file src="NuGetUtils.MSBuild.Exec.Inspect\net46\*.dll" target="build\net46\tools" />
+    <file src="NuGetUtils.MSBuild.Exec.Perform\net46\*.dll" target="build\net46\tools" />-->
+
+    <!--<file src="netcoreapp1.1\NuGetUtils.MSBuild.Exec.dll" target="build\netcoreapp1.1\" />
+    <file src="NuGetSpecific\**\*.dll" target="build\netcoreapp1.1\" />
+    <file src="build\*.*" target="build\" />
+    <file src="buildMultiTargeting\*.*" target="buildMultiTargeting\" />-->
+  </files>
+</package>

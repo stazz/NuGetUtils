@@ -53,6 +53,8 @@ namespace NuGetUtils.MSBuild.Exec
 
       public const String FACTORY_NAME = nameof( NuGetExecutionTaskFactory );
 
+      public const String TOOLS_DIR = "tools";
+
       // Static in order to share state between task factory usage in different build files.
       private static readonly NuGetExecutionCache _cache = new NuGetExecutionCache();
 

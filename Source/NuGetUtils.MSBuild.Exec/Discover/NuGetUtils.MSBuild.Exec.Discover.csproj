@@ -18,6 +18,10 @@
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
 </Project>
