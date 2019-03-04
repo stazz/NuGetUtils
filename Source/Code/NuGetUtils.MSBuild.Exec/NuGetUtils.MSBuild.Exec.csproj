@@ -74,7 +74,6 @@
 
     <NuspecFile>PackageInfo.nuspec</NuspecFile>
     <NuspecBasePath>$(BaseOutputPath)..\</NuspecBasePath>
-    <NuspecProperties>PackageVersion=$(PackageVersion);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(PackageTags);Title=$(Title)</NuspecProperties>
   </PropertyGroup>
 
   <Target Name="CopyBuildFolder" BeforeTargets="GenerateNuspec">
@@ -124,4 +123,9 @@
   </Target>
   
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
+
+  <PropertyGroup>
+    <!-- Set NuSpec properties *after* CI props file import, to have the SemVer git commit info available in PackageVersion property. -->
+    <NuspecProperties>PackageVersion=$(PackageVersion);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(PackageTags);Title=$(Title)</NuspecProperties>
+  </PropertyGroup>
 </Project>
