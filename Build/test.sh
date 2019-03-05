@@ -7,9 +7,10 @@ SCRIPTDIR=$(dirname "$SCRIPTPATH")
 GIT_ROOT=$(readlink -f "${SCRIPTDIR}/..")
 BASE_ROOT=$(readlink -f "${GIT_ROOT}/..")
 
-# Package the project used in tests via NuGet 
+# Package the project used in tests via NuGet (no need to build it as it was built by custom build.sh script)
 dotnet pack \
   -nologo \
+  --no-build \
   -c Release \
   /p:IsCIBuild=true \
   "/p:CIPackageVersionSuffix=${GIT_COMMIT_HASH}" \
