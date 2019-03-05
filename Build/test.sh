@@ -19,9 +19,10 @@ dotnet pack \
 # Now install the package
 rm -rf /root/.nuget/packages/nugetutils.msbuild.exec.testpackage
 LOCAL_TEMP_NUGET_SOURCE="${BASE_ROOT}/local_nuget_repo"
+TEST_PACKAGE_PATH="${BASE_ROOT}/BuildTarget/Release/bin/NuGetUtils.MSBuild.Exec.TestPackage.1.0.0.nupkg"
 mkdir "${LOCAL_TEMP_NUGET_SOURCE}"
 dotnet nuget push \
-  "${BASE_ROOT}/BuildTarget/Release/bin/NuGetUtils.MSBuild.Exec.TestPackage.1.0.0.nupkg" \
+  "${TEST_PACKAGE_PATH}" \
   --source "${LOCAL_TEMP_NUGET_SOURCE}"
 
 # Create required NuGet.config file
@@ -36,3 +37,6 @@ EOF
 
 # Now, run the tests.
 "$@"
+
+# Remember to remove the test package from output folder so it won't be included to artifacts
+rm -rf "${TEST_PACKAGE_PATH}"
