@@ -45,7 +45,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <ProjectReference Include="..\NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj" /> -->
     <ProjectReference Include="..\..\NuGetUtils.MSBuild.Exec\Common\NuGetUtils.MSBuild.Exec.Common.csproj" />
   </ItemGroup>
 
@@ -72,8 +71,9 @@
     <PackageTags>nuget utils msbuild exec</PackageTags>
     <Title>NuGetUtils: Package Executor MSBuild TaskFactory</Title>
 
+    <NuspecBasePath>$(BaseOutputPath)</NuspecBasePath>
     <NuspecFile>PackageInfo.nuspec</NuspecFile>
-    <NuspecBasePath>$(BaseOutputPath)..\</NuspecBasePath>
+    <CopyableProjectOutputBasePath>$(BaseOutputPath)..\</CopyableProjectOutputBasePath>
   </PropertyGroup>
 
   <Target Name="CopyBuildFolder" BeforeTargets="GenerateNuspec">
@@ -82,7 +82,7 @@
     </ItemGroup>
     <Copy
       SourceFiles="@(CopyableFile)"
-      DestinationFolder="$(BaseOutputPath)\build"
+      DestinationFolder="$(NuspecBasePath)\build"
       />
     <ItemGroup>
       <CopyableFile Remove="@(CopyableFile)" />
@@ -90,36 +90,42 @@
     </ItemGroup>
     <Copy
       SourceFiles="@(CopyableFile)"
-      DestinationFolder="$(BaseOutputPath)\buildMultiTargeting"
+      DestinationFolder="$(NuspecBasePath)\buildMultiTargeting"
       />
 
     <!-- We have to do this manually here, getting these using <file> element in .nuspec file results in folder containing multiple copies of the same file with the same name. -->
     <ItemGroup>
       <CopyableFile Remove="@(CopyableFile)" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Discover\net46\*.dll" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Discover\net46\NuGetUtils.MSBuild.Exec.*.exe*" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Inspect\net46\*.dll" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Inspect\net46\NuGetUtils.MSBuild.Exec.*.exe*" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Perform\net46\*.dll" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Perform\net46\NuGetUtils.MSBuild.Exec.*.exe*" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Discover\net46\*.dll" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Discover\net46\NuGetUtils.MSBuild.Exec.*.exe*" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Discover\net46\*.pdb" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Inspect\net46\*.dll" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Inspect\net46\NuGetUtils.MSBuild.Exec.*.exe*" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Inspect\net46\*.pdb" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Perform\net46\*.dll" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Perform\net46\NuGetUtils.MSBuild.Exec.*.exe*" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Perform\net46\*.pdb" />
     </ItemGroup>
     <Copy
       SourceFiles="@(CopyableFile)"
-      DestinationFolder="$(BaseOutputPath)\build\net46\tools\"
+      DestinationFolder="$(NuspecBasePath)\build\net46\tools\"
       />
     <ItemGroup>
       <CopyableFile Remove="@(CopyableFile)" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Discover\netcoreapp2.1\*.dll" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Discover\netcoreapp2.1\*.runtimeconfig.json" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Inspect\netcoreapp2.1\*.dll" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Inspect\netcoreapp2.1\*.runtimeconfig.json" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Perform\netcoreapp2.1\*.dll" />
-      <CopyableFile Include="$(NuspecBasePath)NuGetUtils.MSBuild.Exec.Perform\netcoreapp2.1\*.runtimeconfig.json" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Discover\netcoreapp2.1\*.dll" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Discover\netcoreapp2.1\*.runtimeconfig.json" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Discover\netcoreapp2.1\*.pdb" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Inspect\netcoreapp2.1\*.dll" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Inspect\netcoreapp2.1\*.runtimeconfig.json" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Inspect\netcoreapp2.1\*.pdb" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Perform\netcoreapp2.1\*.dll" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Perform\netcoreapp2.1\*.runtimeconfig.json" />
+      <CopyableFile Include="$(CopyableProjectOutputBasePath)NuGetUtils.MSBuild.Exec.Perform\netcoreapp2.1\*.pdb" />
     </ItemGroup>
     <Copy
       SourceFiles="@(CopyableFile)"
-      DestinationFolder="$(BaseOutputPath)\build\netcoreapp2.1\tools\"
-      />    
+      DestinationFolder="$(NuspecBasePath)\build\netcoreapp2.1\tools\"
+      />
   </Target>
   
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />

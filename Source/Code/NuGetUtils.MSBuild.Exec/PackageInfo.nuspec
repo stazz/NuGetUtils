@@ -18,24 +18,24 @@
     <dependencies/>
   </metadata>
   <files>
-    <file src="NuGetUtils.MSBuild.Exec\build\*.props" target="build\" />
-    <file src="NuGetUtils.MSBuild.Exec\buildMultiTargeting\*.props" target="buildMultiTargeting\" />
+    <file src="build\*.props" target="build\" />
+    <file src="buildMultiTargeting\*.props" target="buildMultiTargeting\" />
     
-    <file src="NuGetUtils.MSBuild.Exec\net46\*.dll" exclude="NuGetUtils.MSBuild.Exec\net46\Microsoft.Build.Framework.dll" target="build\net46" />
-    <file src="NuGetUtils.MSBuild.Exec\build\net46\tools\*.dll" target="build\net46\tools" />
-    <file src="NuGetUtils.MSBuild.Exec\build\net46\tools\*.exe*" target="build\net46\tools" />
+    <file src="net46\*.dll" exclude="net46\Microsoft.Build.Framework.dll" target="build\net46" />
+    <file src="build\net46\tools\*.dll" target="build\net46\tools" />
+    <file src="build\net46\tools\*.exe*" target="build\net46\tools" />
 
-    <file src="NuGetUtils.MSBuild.Exec\netcoreapp2.1\*.dll" exclude="NuGetUtils.MSBuild.Exec\netcoreapp2.1\Microsoft.Build.Framework.dll;NuGetUtils.MSBuild.Exec\netcoreapp2.1\Newtonsoft.Json.dll" target="build\netcoreapp2.1" />
-    <file src="NuGetUtils.MSBuild.Exec\build\netcoreapp2.1\tools\*.dll" target="build\netcoreapp2.1\tools" />
-    <file src="NuGetUtils.MSBuild.Exec\build\netcoreapp2.1\tools\*.exe*" target="build\netcoreapp2.1\tools" />
+    <file src="netcoreapp2.1\*.dll" exclude="netcoreapp2.1\Microsoft.Build.Framework.dll;netcoreapp2.1\Newtonsoft.Json.dll" target="build\netcoreapp2.1" />
+    <file src="build\netcoreapp2.1\tools\*.dll" target="build\netcoreapp2.1\tools" />
+    <file src="build\netcoreapp2.1\tools\*.exe*" target="build\netcoreapp2.1\tools" />
 
-    <!--<file src="NuGetUtils.MSBuild.Exec.Discover\net46\*.dll" target="build\net46\tools" />
-    <file src="NuGetUtils.MSBuild.Exec.Inspect\net46\*.dll" target="build\net46\tools" />
-    <file src="NuGetUtils.MSBuild.Exec.Perform\net46\*.dll" target="build\net46\tools" />-->
-
-    <!--<file src="netcoreapp1.1\NuGetUtils.MSBuild.Exec.dll" target="build\netcoreapp1.1\" />
-    <file src="NuGetSpecific\**\*.dll" target="build\netcoreapp1.1\" />
-    <file src="build\*.*" target="build\" />
-    <file src="buildMultiTargeting\*.*" target="buildMultiTargeting\" />-->
+    <!-- 
+      Add PDB files to make dotnet pack with symbols work (and not produce NU5005 error). These won't end up in the actual .nupkg, but into .snupkg instead.
+      Another question completely is whether it is any point in creating .snupkg for developmentDependency package, but for now, let's go with this. 
+    -->
+    <file src="net46\*.pdb" target="build\net46" />
+    <file src="netcoreapp2.1\*.pdb" target="build\netcoreapp2.1" />
+    <file src="build\net46\tools\*.pdb" target="build\net46\tools" />
+    <file src="build\netcoreapp2.1\tools\*.pdb" target="build\netcoreapp2.1\tools" />
   </files>
 </package>
