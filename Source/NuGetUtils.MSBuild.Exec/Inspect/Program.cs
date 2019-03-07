@@ -171,7 +171,7 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
          return new ExecutableParameterInfo()
          {
             PropertyName = property.Name,
-            IsRequired = false,
+            IsRequired = false, // TODO Required-deduction, maybe will be easier with C# 8?
             TypeName = pType.FullName,
             IsEnum = pType.IsEnum
          };

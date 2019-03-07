@@ -21,11 +21,11 @@
     <file src="build\*.props" target="build\" />
     <file src="buildMultiTargeting\*.props" target="buildMultiTargeting\" />
     
-    <file src="net46\*.dll" exclude="net46\Microsoft.Build.Framework.dll" target="build\net46" />
+    <file src="net46\*.dll" exclude="net46\Microsoft.Build.Framework.dll;net46\Microsoft.Build.Utilities.Core.dll" target="build\net46" />
     <file src="build\net46\tools\*.dll" target="build\net46\tools" />
     <file src="build\net46\tools\*.exe*" target="build\net46\tools" />
 
-    <file src="netcoreapp2.1\*.dll" exclude="netcoreapp2.1\Microsoft.Build.Framework.dll;netcoreapp2.1\Newtonsoft.Json.dll" target="build\netcoreapp2.1" />
+    <file src="netcoreapp2.1\*.dll" exclude="netcoreapp2.1\Microsoft.Build.Framework.dll;netcoreapp2.1\Microsoft.Build.Utilities.Core.dll;netcoreapp2.1\Newtonsoft.Json.dll" target="build\netcoreapp2.1" />
     <file src="build\netcoreapp2.1\tools\*.dll" target="build\netcoreapp2.1\tools" />
     <file src="build\netcoreapp2.1\tools\*.exe*" target="build\netcoreapp2.1\tools" />
 

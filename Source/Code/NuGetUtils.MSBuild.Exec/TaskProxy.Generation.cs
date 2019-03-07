@@ -84,9 +84,10 @@ namespace NuGetUtils.MSBuild.Exec
          var outPropertyInfos = new List<(String, Type, FieldBuilder)>();
          var interfacePropertyInfos = new List<(String, Type, FieldBuilder)>();
 
+         var taskItemFullName = typeof( ITaskItem ).FullName + "[]";
          var properties = inputs
             .Select( p => (p, new TaskPropertyInfo( p.PropertyName, typeof( String ), false, p.IsRequired )) )
-            .Concat( outputs.Select( p => (p, new TaskPropertyInfo( p.PropertyName, typeof( String ), true, p.IsRequired )) ) )
+            .Concat( outputs.Select( p => (p, new TaskPropertyInfo( p.PropertyName, String.Equals( taskItemFullName, p.TypeName, StringComparison.Ordinal ) ? typeof( ITaskItem[] ) : typeof( String ), true, p.IsRequired )) ) )
             .ToImmutableArray();
 
 
@@ -238,18 +239,14 @@ namespace NuGetUtils.MSBuild.Exec
          // Canceability
          if ( isCancelable )
          {
-            tb.AddInterfaceImplementation( typeof( Microsoft.Build.Framework.ICancelableTask ) );
+            tb.AddInterfaceImplementation( typeof( ICancelableTask ) );
             var cancel = tb.DefineMethod(
-               nameof( Microsoft.Build.Framework.ICancelableTask.Cancel ),
+               nameof( ICancelableTask.Cancel ),
                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                typeof( void ),
                new Type[] { }
                );
-            var cancelMethod = typeof( TaskProxy ).GetMethod( nameof( TaskProxy.Cancel ) );
-            if ( cancelMethod == null )
-            {
-               throw new Exception( "Internal error: no cancel." );
-            }
+            var cancelMethod = typeof( TaskProxy ).GetMethod( nameof( TaskProxy.Cancel ) ) ?? throw new Exception( "Internal error: no cancel." );
             il = cancel.GetILGenerator();
             // Call cancel to TaskReferenceHolder which will forward it to actual task
             il.Emit( OpCodes.Ldarg_0 );

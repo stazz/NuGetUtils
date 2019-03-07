@@ -31,6 +31,8 @@ using UtilPack;
 
 namespace NuGetUtils.MSBuild.Exec
 {
+   using TaskItem = Microsoft.Build.Utilities.TaskItem;
+
    public sealed class TaskProxy
    {
       private readonly ImmutableDictionary<String, TaskPropertyHolder> _propertyInfos;
@@ -55,7 +57,7 @@ namespace NuGetUtils.MSBuild.Exec
          this._entrypoint = ArgumentValidator.ValidateNotNull( nameof( entrypoint ), entrypoint );
          this._propertyInfos = generationResult
             .Properties
-            .ToImmutableDictionary( p => p.Name, p => new TaskPropertyHolder( p.Output ) );
+            .ToImmutableDictionary( p => p.Name, p => new TaskPropertyHolder( p.Output, !Equals( p.PropertyType, typeof( String ) ) ) );
          this._cancellationTokenSource = new CancellationTokenSource();
       }
 
@@ -119,7 +121,12 @@ namespace NuGetUtils.MSBuild.Exec
                   InputProperties = new JObject(
                      this._propertyInfos
                         .Where( kvp => !kvp.Value.IsOutput )
-                        .Select( kvp => new JProperty( kvp.Key, kvp.Value.Value ) )
+                        .Select( kvp =>
+                        {
+                           var valInfo = kvp.Value;
+                           var val = valInfo.Value;
+                           return new JProperty( kvp.Key, valInfo.IsTaskItemArray ? new JArray( ( (ITaskItem[]) val ).Select( v => v.ItemSpec ).ToArray() ) : val );
+                        } )
                      ).ToString( Formatting.None ),
                },
                this._cancellationTokenSource.Token,
@@ -157,13 +164,17 @@ namespace NuGetUtils.MSBuild.Exec
                using ( var sReader = new StreamReader( File.Open( tempFileLocation, FileMode.Open, FileAccess.Read, FileShare.None ), new UTF8Encoding( false, false ), false ) )
                using ( var jReader = new JsonTextReader( sReader ) )
                {
-                  foreach ( var jProp in ( await JObject.LoadAsync( jReader ) )
+                  foreach ( var tuple in ( await JObject.LoadAsync( jReader ) )
                      .Properties()
-                     .Where( p => this._propertyInfos.TryGetValue( p.Name, out var prop ) && prop.IsOutput )
+                     .Select( p => (p, this._propertyInfos.TryGetValue( p.Name, out var prop ) ? prop : null) )
+                     .Where( t => t.Item2?.IsOutput ?? false )
                      )
                   {
+                     var jProp = tuple.p;
                      var jValue = jProp.Value;
-                     this._propertyInfos[jProp.Name].Value = jProp.Value is JValue jPrimitive ? jPrimitive.Value?.ToString() : jValue.ToString();
+                     this._propertyInfos[jProp.Name].Value = tuple.Item2.IsTaskItemArray ?
+                        (Object) ( ( jValue as JArray )?.Select( j => new TaskItem( ( j as JValue )?.Value?.ToString() ?? "" ) )?.ToArray() ?? Empty<TaskItem>.Array ) :
+                        ( jProp.Value as JValue )?.Value?.ToString();
                   }
                }
             }
@@ -195,12 +206,17 @@ namespace NuGetUtils.MSBuild.Exec
 
       private sealed class TaskPropertyHolder
       {
-         public TaskPropertyHolder( Boolean isOutput )
+         public TaskPropertyHolder(
+            Boolean isOutput,
+            Boolean isTaskItemArray
+            )
          {
             this.IsOutput = isOutput;
+            this.IsTaskItemArray = isTaskItemArray;
          }
 
          public Boolean IsOutput { get; }
+         public Boolean IsTaskItemArray { get; }
          public Object Value { get; set; }
       }
    }

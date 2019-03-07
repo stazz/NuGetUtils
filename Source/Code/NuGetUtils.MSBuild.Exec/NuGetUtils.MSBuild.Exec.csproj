@@ -30,11 +30,11 @@
   </ItemDefinitionGroup> -->
 
   <ItemGroup Condition="'$(TargetFramework)' != 'netcoreapp2.1' ">
-    <PackageReference Include="Microsoft.Build.Framework" Version="14.3" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="14.3" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.548" />
   </ItemGroup>
 
   <ItemGroup>
