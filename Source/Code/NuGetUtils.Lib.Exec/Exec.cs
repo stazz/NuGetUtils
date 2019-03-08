@@ -285,6 +285,7 @@ public static partial class E_NuGetUtils
    /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
    /// <param name="additionalParameterTypeProvider">The callback to provide values for method parameters with custom types.</param>
    /// <param name="appDomainSetup">The app domain setup for the assembly loader. The value <c>null</c> indicates that the loader should use current AppDomain.</param>
+   /// <param name="getFiles">Optional <see cref="GetFileItemsDelegate"/> to use when creating <see cref="NuGetAssemblyResolver"/>.</param>
    /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
@@ -299,6 +300,7 @@ public static partial class E_NuGetUtils
    /// <param name="additionalParameterTypeProvider">The callback to provide values for method parameters with custom types.</param>
    /// <param name="sdkPackageID">The package ID of the SDK package to restore, if so configured.</param>
    /// <param name="sdkPackageVersion">The package version of the SDK package to restore, if so configured.</param>
+   /// <param name="getFiles">Optional <see cref="GetFileItemsDelegate"/> to use when creating <see cref="NuGetAssemblyResolver"/>.</param>
    /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
@@ -361,6 +363,7 @@ public static partial class E_NuGetUtils
    /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
    /// <param name="additionalParameterTypeProvider">The callback to provide values for method parameters with custom types.</param>
    /// <param name="appDomainSetup">The app domain setup for the assembly loader. The value <c>null</c> indicates that the loader should use current AppDomain.</param>
+   /// <param name="getFiles">Optional <see cref="GetFileItemsDelegate"/> to use when creating <see cref="NuGetAssemblyResolver"/>.</param>
    /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
@@ -375,6 +378,7 @@ public static partial class E_NuGetUtils
    /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
    /// <param name="additionalParameterTypeProvider">The callback to provide values for method parameters with custom types.</param>
    /// <param name="thisFrameworkRestoreResult">The optional <see cref="LockFile"/> containing restoration result of SDK package, or enumerable of SDK assembly paths.</param>
+   /// <param name="getFiles">Optional <see cref="GetFileItemsDelegate"/> to use when creating <see cref="NuGetAssemblyResolver"/>.</param>
    /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
@@ -417,6 +421,7 @@ public static partial class E_NuGetUtils
    /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use for restoring.</param>
    /// <param name="useMethod">Callback to use the <see cref="MethodInfo"/> that was found (or <c>null</c>) within the context of <see cref="NuGetAssemblyResolver"/> being used.</param>
    /// <param name="appDomainSetup">The app domain setup for the assembly loader. The value <c>null</c> indicates that the loader should use current AppDomain.</param>
+   /// <param name="getFiles">Optional <see cref="GetFileItemsDelegate"/> to use when creating <see cref="NuGetAssemblyResolver"/>.</param>
    /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
@@ -430,6 +435,7 @@ public static partial class E_NuGetUtils
    /// <param name="useMethod">Callback to use the <see cref="MethodInfo"/> that was found (or <c>null</c>) within the context of <see cref="NuGetAssemblyResolver"/> being used.</param>
    /// <param name="sdkPackageID">The package ID of the SDK package to restore, if so configured.</param>
    /// <param name="sdkPackageVersion">The package version of the SDK package to restore, if so configured.</param>
+   /// <param name="getFiles">Optional <see cref="GetFileItemsDelegate"/> to use when creating <see cref="NuGetAssemblyResolver"/>.</param>
    /// <returns>The return value of the method, if the method returns integer synchronously or asynchronously.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="NuGetExecutionConfiguration"/> is <c>null</c>.</exception>
    /// <exception cref="ArgumentNullException">If <paramref name="restorer"/> is <c>null</c>.</exception>
