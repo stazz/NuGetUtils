@@ -14,21 +14,14 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\NuGetUtils.MSBuild.Exec.Common.csproj" />
+    <ProjectReference Include="..\Common.NuGetDependant\NuGetUtils.MSBuild.Exec.Common.NuGetDependant.csproj" />
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj" />
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />
   </ItemGroup>
 
-  <!-- Collect also all NuGet assemblies for .NET Core -->
-  <ItemDefinitionGroup>
-    <PackageReference>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <ProjectReference>
-      <PrivateAssets>all</PrivateAssets>
-    </ProjectReference>
-  </ItemDefinitionGroup>
-
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
 
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 

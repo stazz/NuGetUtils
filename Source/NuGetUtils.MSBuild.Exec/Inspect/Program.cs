@@ -19,11 +19,13 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NuGet.Common;
 using NuGet.Versioning;
+using NuGetUtils.Lib.Common;
 using NuGetUtils.Lib.Exec;
 using NuGetUtils.Lib.Restore;
 using NuGetUtils.Lib.Tool;
 using NuGetUtils.Lib.Tool.Agnostic;
 using NuGetUtils.MSBuild.Exec.Common;
+using NuGetUtils.MSBuild.Exec.Common.NuGetDependant;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -83,6 +85,7 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
             sdkPackageID,
             sdkPackageVersion
 #endif
+            , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
             );
 
          var retVal = methodOrNull == null ?
@@ -148,8 +151,6 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
          }
 
       }
-
-
    }
 
    internal static class NuGetUtilsExtensions

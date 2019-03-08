@@ -18,6 +18,7 @@
 using Newtonsoft.Json;
 using NuGet.ProjectModel;
 using NuGetUtils.Lib.AssemblyResolving;
+using NuGetUtils.Lib.Common;
 using NuGetUtils.Lib.EntryPoint;
 using NuGetUtils.Lib.Exec;
 using NuGetUtils.Lib.Exec.Agnostic;
@@ -314,6 +315,7 @@ public static partial class E_NuGetUtils
       String sdkPackageID,
       String sdkPackageVersion
 #endif
+      , GetFileItemsDelegate getFiles = null
       )
    {
       var maybeResult = await configuration.ExecuteMethodWithinNuGetAssemblyAsync(
@@ -326,6 +328,7 @@ public static partial class E_NuGetUtils
 #else
          await configuration.RestoreIfNeeded( token, restorer, sdkPackageID, sdkPackageVersion )
 #endif
+         , getFiles: getFiles
          );
 
       // TODO output write to file or throw if NoExecutableMethodFound
@@ -387,6 +390,7 @@ public static partial class E_NuGetUtils
 #else
       EitherOr<IEnumerable<String>, LockFile> thisFrameworkRestoreResult = default
 #endif
+      , GetFileItemsDelegate getFiles = null
       )
    {
       return configuration.PerformFindMethodForExecutingWithinNuGetAssemblyAsync(
@@ -400,6 +404,7 @@ public static partial class E_NuGetUtils
 #else
             thisFrameworkRestoreResult
 #endif
+            , getFiles: getFiles
             );
    }
 
@@ -444,6 +449,7 @@ public static partial class E_NuGetUtils
       String sdkPackageID,
       String sdkPackageVersion
 #endif
+      , GetFileItemsDelegate getFiles = null
       )
    {
       return
@@ -459,6 +465,7 @@ public static partial class E_NuGetUtils
 #else
             await configuration.RestoreIfNeeded( token, restorer, sdkPackageID, sdkPackageVersion )
 #endif
+            , getFiles: getFiles
             );
    }
 
@@ -489,6 +496,7 @@ public static partial class E_NuGetUtils
 #else
       EitherOr<IEnumerable<String>, LockFile> thisFrameworkRestoreResult = default
 #endif
+      , GetFileItemsDelegate getFiles = null
       )
    {
       ArgumentValidator.ValidateNotNullReference( configuration );
@@ -503,6 +511,7 @@ public static partial class E_NuGetUtils
          thisFrameworkRestoreResult: thisFrameworkRestoreResult,
          additionalCheckForDefaultLoader: NuGetAssemblyResolverFactory.ReturnFromParentAssemblyLoaderForAssemblies( new[] { typeof( ConfiguredEntryPointAttribute ) } )
 #endif
+         , defaultGetFiles: getFiles
          ) )
 #if NET46
       using ( new UsingHelper( () => { if ( appDomain != null ) { try { AppDomain.Unload( appDomain ); } catch { } } } ) )

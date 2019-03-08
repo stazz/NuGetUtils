@@ -22,6 +22,7 @@ using NuGetUtils.Lib.Restore;
 using NuGetUtils.Lib.Tool;
 using NuGetUtils.Lib.Tool.Agnostic;
 using NuGetUtils.MSBuild.Exec.Common;
+using NuGetUtils.MSBuild.Exec.Common.NuGetDependant;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,6 +70,7 @@ namespace NuGetUtils.MSBuild.Exec.Perform
                sdkPackageID,
                sdkPackageVersion
 #endif
+               , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
                );
 
          return maybeResult.IsFirst ? 0 : -4;
