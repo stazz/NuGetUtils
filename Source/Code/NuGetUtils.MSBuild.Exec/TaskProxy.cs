@@ -164,7 +164,7 @@ namespace NuGetUtils.MSBuild.Exec
                using ( var sReader = new StreamReader( File.Open( tempFileLocation, FileMode.Open, FileAccess.Read, FileShare.None ), new UTF8Encoding( false, false ), false ) )
                using ( var jReader = new JsonTextReader( sReader ) )
                {
-                  foreach ( var tuple in ( await JObject.LoadAsync( jReader ) )
+                  foreach ( var tuple in ( JObject.Load( jReader ) ) // No LoadAsync in 9.0.0.
                      .Properties()
                      .Select( p => (p, this._propertyInfos.TryGetValue( p.Name, out var prop ) ? prop : null) )
                      .Where( t => t.Item2?.IsOutput ?? false )

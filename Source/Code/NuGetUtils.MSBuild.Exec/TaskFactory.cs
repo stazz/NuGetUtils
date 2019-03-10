@@ -180,6 +180,16 @@ namespace NuGetUtils.MSBuild.Exec
                }
                else
                {
+                  var msg = $"Detected current NuGet framework to be \"{env.ThisFramework}\", with RID \"{env.ThisRuntimeID}\".";
+                  if (be == null)
+                  {
+                     Console.Out.WriteLine( msg );
+                  }
+                  else
+                  {
+                     be.LogMessageEvent( new BuildMessageEventArgs( msg, null, null, MessageImportance.Normal ) );
+                  }
+
                   var inspection = await _cache.InspectPackageAsync( env, new InspectionKey(
                         env.ThisFramework,
                         args.SettingsLocation,
