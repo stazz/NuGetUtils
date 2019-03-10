@@ -19,15 +19,18 @@ using NuGet.Common;
 using NuGet.ProjectModel;
 using NuGetUtils.Lib.EntryPoint;
 using NuGetUtils.Lib.Exec;
+using NuGetUtils.Lib.Exec.Agnostic;
 using NuGetUtils.Lib.Restore;
+using NuGetUtils.Lib.Restore.Agnostic;
 using NuGetUtils.Lib.Tool;
+using NuGetUtils.Lib.Tool.Agnostic;
 using System;
 using UtilPack.Documentation;
 using static NuGetUtils.Lib.Tool.DefaultDocumentation;
 
 namespace NuGetUtils.Tool.Exec
 {
-   internal sealed class NuGetExecutionConfigurationImpl : NuGetExecutionConfiguration, NuGetUsageConfiguration
+   internal sealed class NuGetExecutionConfigurationImpl : NuGetExecutionConfiguration, NuGetUsageConfiguration<LogLevel>
    {
 
       [
@@ -52,16 +55,27 @@ namespace NuGetUtils.Tool.Exec
 
       [
          Required( Conditional = true ),
-         Description( ValueName = "type", Description = "The full name of the type which contains entry point method. Is optional if assembly is built as EXE, or if assembly contains " + nameof( ConfiguredEntryPointAttribute ) + " attribute. Otherwise it is required." )
+         Description( ValueName = "type", Description = "The full name of the type which contains entry point method. Is optional if assembly is built as EXE, or if assembly contains " + nameof( ConfiguredEntryPointAttribute ) + " attribute. Otherwise required, if method token is not specified." )
          ]
       public String EntrypointTypeName { get; set; }
 
 
       [
          Required( Conditional = true ),
-         Description( ValueName = "method", Description = "The name of the method which is an entry point method. Is optional if assembly is built as EXE, or if assembly contains " + nameof( ConfiguredEntryPointAttribute ) + " attribute. Otherwise it is required." )
+         Description( ValueName = "method", Description = "The name of the method which is an entry point method. Is optional if assembly is built as EXE, or if assembly contains " + nameof( ConfiguredEntryPointAttribute ) + " attribute. Otherwise required, if method token is not specified." )
          ]
       public String EntrypointMethodName { get; set; }
+
+      [
+         Required( Conditional = true ),
+         Description( ValueName = "md-token", Description = "The metadata token of the method to execute. This will uniquely identify the method to run, without the need for type and method names, but may vary between compilations." )
+         ]
+      public Int32? MethodToken { get; set; }
+
+      [
+         Description( ValueName = "path", Description = "The path where to write the return value of the method, if any. Currently, the only format to write the result is JSON." )
+         ]
+      public String ReturnValuePath { get; set; }
 
       [IgnoreInDocumentation]
       public String[] ProcessArguments { get; set; }
@@ -80,6 +94,10 @@ namespace NuGetUtils.Tool.Exec
          Description( ValueName = RestoreFrameworkValue, Description = RestoreFrameworkDescription )
          ]
       public String RestoreFramework { get; set; }
+
+      [
+         Description( ValueName = RestoreRIDValue, Description = RestoreRIDDescription )]
+      public String RestoreRuntimeID { get; set; }
 
 
       [

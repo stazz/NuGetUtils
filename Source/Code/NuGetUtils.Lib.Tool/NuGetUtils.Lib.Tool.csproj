@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
-      <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+      <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
    </PropertyGroup>
 
    <PropertyGroup>
@@ -11,15 +11,22 @@
       <LangVersion>latest</LangVersion>
    </PropertyGroup>
 
+  <PropertyGroup>
+    <MicrosoftConfigurationVersion Condition=" '$(TargetFramework)' == 'net46' ">1.1.2</MicrosoftConfigurationVersion>
+    <MicrosoftConfigurationVersion Condition=" '$(TargetFramework)' != 'net46' ">2.2.0</MicrosoftConfigurationVersion>
+  </PropertyGroup>
+
    <ItemGroup>
       <ProjectReference Include="..\NuGetUtils.Lib.Restore\NuGetUtils.Lib.Restore.csproj" />
+     <ProjectReference Include="..\NuGetUtils.Lib.Tool.Agnostic\NuGetUtils.Lib.Tool.Agnostic.csproj" />
    </ItemGroup>
 
    <ItemGroup>
       <PackageReference Include="UtilPack.Documentation" Version="1.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.1" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.1.1" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
+      <PackageReference Include="UtilPack.JSON.Configuration" Version="1.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="$(MicrosoftConfigurationVersion)" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="$(MicrosoftConfigurationVersion)" />
+      <!-- <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftConfigurationVersion)" /> -->
    </ItemGroup>
 
    <!-- Assembly information stuff -->

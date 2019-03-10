@@ -12,6 +12,7 @@
   </PropertyGroup>
  
   <ItemGroup>
+    <ProjectReference Include="..\NuGetUtils.Lib.Restore.Agnostic\NuGetUtils.Lib.Restore.Agnostic.csproj" />
     <ProjectReference Include="..\NuGetUtils.Lib.Common\NuGetUtils.Lib.Common.csproj" />
   </ItemGroup>
 

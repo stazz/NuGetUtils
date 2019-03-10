@@ -355,7 +355,7 @@ namespace NuGetUtils.Lib.AssemblyResolving
       /// Creates new instance of <see cref="NuGetAssemblyResolver"/> and <see cref="System.Runtime.Loader.AssemblyLoadContext"/> to be used to load assemblies of NuGet packages.
       /// </summary>
       /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> to use when restoring packages.</param>
-      /// <param name="thisFrameworkRestoreResult">The <see cref="LockFile"/> obtained by restoring the framework package. For .NET Core, this framework package is the one with ID <c>Microsoft.NETCore.App</c>.</param>
+      /// <param name="thisFrameworkRestoreResult">Optional <see cref="LockFile"/> obtained by restoring the framework package. For .NET Core, this framework package is the one with ID <c>Microsoft.NETCore.App</c>.</param>
       /// <param name="createdLoader">This parameter will contain the newly created <see cref="System.Runtime.Loader.AssemblyLoadContext"/>.</param>
       /// <param name="additionalCheckForDefaultLoader">The optional callback to check whether some assembly needs to be loaded using parent loader (the loader which loaded this assembly).</param>
       /// <param name="defaultGetFiles">The optional callback to give to <see cref="M:E_NuGetUtils.ExtractAssemblyPaths{TResult}(BoundRestoreCommandUser, LockFile, Func{string, IEnumerable{string}, TResult}, GetFileItemsDelegate)"/> method.</param>

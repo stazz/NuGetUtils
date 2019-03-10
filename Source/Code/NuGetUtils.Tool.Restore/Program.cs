@@ -32,7 +32,7 @@ namespace NuGetUtils.Tool.Restore
 
    }
 
-   internal sealed class NuGetRestoringProgram : NuGetRestoringProgram<NuGetRestoreConfiguration, ConfigurationConfigurationImpl>
+   internal sealed class NuGetRestoringProgram : NuGetRestoringProgramWithDocumentation<NuGetRestoreConfiguration, ConfigurationConfigurationImpl>
    {
 
       public NuGetRestoringProgram()
@@ -52,7 +52,7 @@ namespace NuGetUtils.Tool.Restore
       }
 
       protected override Boolean ValidateConfiguration(
-         ConfigurationInformation info
+         ConfigurationInformation<NuGetRestoreConfiguration> info
          )
       {
          var config = info.Configuration;
@@ -62,7 +62,7 @@ namespace NuGetUtils.Tool.Restore
       }
 
       protected override async Task<Int32> UseRestorerAsync(
-         ConfigurationInformation info,
+         ConfigurationInformation<NuGetRestoreConfiguration> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,

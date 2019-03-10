@@ -16,10 +16,13 @@
  * limitations under the License. 
  */
 using Microsoft.Extensions.Configuration;
+using NuGet.Common;
 using NuGet.Frameworks;
 using NuGetUtils.Lib.Common;
 using NuGetUtils.Lib.Restore;
+using NuGetUtils.Lib.Restore.Agnostic;
 using NuGetUtils.Lib.Tool;
+using NuGetUtils.Lib.Tool.Agnostic;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -31,6 +34,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
 using UtilPack.Documentation;
+using UtilPack.JSON.Configuration;
 
 namespace NuGetUtils.Lib.Tool
 {
@@ -43,7 +47,7 @@ namespace NuGetUtils.Lib.Tool
    /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
    /// <remarks>
    /// <para>The configuration types are type parameters so that the actual types could have their own dedicated <see cref="RequiredAttribute"/> and <see cref="DescriptionAttribute"/> attributes for the documentation.</para>
-   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, global::System.String[])"/> or <see cref="JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
+   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, String[])"/> or <see cref="Microsoft.Extensions.Configuration.JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
    /// This typically results in direct argument name -> property name binding.</para>
    /// <para>For example, specifying "--MyArgument=MyValue" would require the <typeparamref name="TCommandLineConfiguration"/> to have a (string) property named "MyArgument" which would also need to be settable.
    /// Then, after the <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method invocation, the "MyArgument" property would have value "MyValue".</para>
@@ -100,15 +104,23 @@ namespace NuGetUtils.Lib.Tool
                }
                else
                {
-                  configRoot = new ConfigurationBuilder()
-                     .AddJsonFile( Path.GetFullPath(
-                        new ConfigurationBuilder()
-                           .AddCommandLine( args.Take( programArgStart ).ToArray() )
-                           .Build()
-                           .Get<TConfigurationConfiguration>()
-                           .ConfigurationFileLocation
-                           )
-                        );
+                  var configConfigPath = new ConfigurationBuilder()
+                     .AddCommandLine( args.Take( programArgStart ).ToArray() )
+                     .Build()
+                     .Get<TConfigurationConfiguration>()
+                     .ConfigurationFileLocation;
+                  var configBuilder = new ConfigurationBuilder();
+                  if ( String.Equals( DefaultConfigurationConfiguration.STANDARD_INPUT_OUR_OUTPUT_MARKER, configConfigPath ) )
+                  {
+                     // Read from stdin
+                     configRoot = configBuilder
+                        .AddJsonContents( await Console.OpenStandardInput( 0x1000 ).ReadUntilTheEndAsync( default ) );
+                  }
+                  else
+                  {
+                     configRoot = configBuilder
+                        .AddJsonFile( Path.GetFullPath( configConfigPath ) );
+                  }
                }
             }
             else
@@ -163,7 +175,7 @@ namespace NuGetUtils.Lib.Tool
          Int32? retVal = null;
          if ( programConfig != null )
          {
-            var info = new ConfigurationInformation( programConfig, isConfigConfig, args.ToImmutableArray() );
+            var info = new ConfigurationInformation<TCommandLineConfiguration>( programConfig, isConfigConfig, args.ToImmutableArray() );
             if ( this.ValidateConfiguration( info ) )
             {
                using ( var source = new CancellationTokenSource() )
@@ -213,68 +225,68 @@ namespace NuGetUtils.Lib.Tool
       /// <summary>
       /// Subclasses should implement this method to perform validation on configuration.
       /// </summary>
-      /// <param name="info">The <see cref="ConfigurationInformation"/> about the configuration.</param>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about the configuration.</param>
       /// <returns>Should return <c>true</c> if configuration is deemed to be valid; <c>false</c> otherwise.</returns>
-      protected abstract Boolean ValidateConfiguration( ConfigurationInformation info );
+      protected abstract Boolean ValidateConfiguration( ConfigurationInformation<TCommandLineConfiguration> info );
 
       /// <summary>
       /// Subclasses should implement this method to perform their task. This method is only invoked if <see cref="ValidateConfiguration"/> returns <c>true</c>.
       /// </summary>
-      /// <param name="info">The <see cref="ConfigurationInformation"/> about the configuration.</param>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about the configuration.</param>
       /// <param name="token">The cancellation token which gets canceled on <see cref="Console.CancelKeyPress"/> event.</param>
       /// <returns>An integer return value which will be further returned by <see cref="MainAsync"/>.</returns>
-      protected abstract Task<Int32> PerformWithConfigAsync( ConfigurationInformation info, CancellationToken token );
+      protected abstract Task<Int32> PerformWithConfigAsync( ConfigurationInformation<TCommandLineConfiguration> info, CancellationToken token );
 
       /// <summary>
       /// Subclasses should implement this method to create a documentation string.
       /// </summary>
       /// <returns></returns>
       protected abstract String GetDocumentation();
-
-      /// <summary>
-      /// This structure captures information about configuration created by <see cref="MainAsync"/> method.
-      /// </summary>
-      protected struct ConfigurationInformation
-      {
-
-         /// <summary>
-         /// Creates a new instance of <see cref="ConfigurationInformation"/>.
-         /// </summary>
-         /// <param name="configuration">The configuration.</param>
-         /// <param name="isConfigurationConfiguration"><c>true</c> if configuration was read from JSON file; <c>false</c> if configuration was read from command line arguments directly.</param>
-         /// <param name="remainingArguments">Any remaining arguments in case argsEndMark parameter was specified for <see cref="MainAsync"/>.</param>
-         public ConfigurationInformation(
-            TCommandLineConfiguration configuration,
-            Boolean isConfigurationConfiguration,
-            ImmutableArray<String> remainingArguments
-            )
-         {
-            this.Configuration = ArgumentValidator.ValidateNotNull( nameof( configuration ), configuration );
-            this.IsConfigurationConfiguration = isConfigurationConfiguration;
-            this.RemainingArguments = remainingArguments;
-         }
-
-         /// <summary>
-         /// Gets the actual configuration instance.
-         /// </summary>
-         /// <value>The actual configuration instance.</value>
-         public TCommandLineConfiguration Configuration { get; }
-
-         /// <summary>
-         /// <c>true</c> if configuration was read from JSON file; <c>false</c> if configuration was read from command line arguments directly.
-         /// </summary>
-         /// <value><c>true</c> if configuration was read from JSON file; <c>false</c> if configuration was read from command line arguments directly.</value>
-         public Boolean IsConfigurationConfiguration { get; }
-
-         /// <summary>
-         /// Gets any remaining arguments in case argsEndMark parameter was specified for <see cref="MainAsync"/>.
-         /// </summary>
-         /// <value>Any remaining arguments in case argsEndMark parameter was specified for <see cref="MainAsync"/>.</value>
-         public ImmutableArray<String> RemainingArguments { get; }
-      }
-
    }
 
+
+   /// <summary>
+   /// This structure captures information about configuration created by <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/> method.
+   /// </summary>
+   public struct ConfigurationInformation<TCommandLineConfiguration>
+      where TCommandLineConfiguration : class
+   {
+
+      /// <summary>
+      /// Creates a new instance of <see cref="ConfigurationInformation{TCommandLineConfiguration}"/>.
+      /// </summary>
+      /// <param name="configuration">The configuration.</param>
+      /// <param name="isConfigurationConfiguration"><c>true</c> if configuration was read from JSON file; <c>false</c> if configuration was read from command line arguments directly.</param>
+      /// <param name="remainingArguments">Any remaining arguments in case argsEndMark parameter was specified for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</param>
+      public ConfigurationInformation(
+         TCommandLineConfiguration configuration,
+         Boolean isConfigurationConfiguration,
+         ImmutableArray<String> remainingArguments
+         )
+      {
+         this.Configuration = ArgumentValidator.ValidateNotNull( nameof( configuration ), configuration );
+         this.IsConfigurationConfiguration = isConfigurationConfiguration;
+         this.RemainingArguments = remainingArguments;
+      }
+
+      /// <summary>
+      /// Gets the actual configuration instance.
+      /// </summary>
+      /// <value>The actual configuration instance.</value>
+      public TCommandLineConfiguration Configuration { get; }
+
+      /// <summary>
+      /// <c>true</c> if configuration was read from JSON file; <c>false</c> if configuration was read from command line arguments directly.
+      /// </summary>
+      /// <value><c>true</c> if configuration was read from JSON file; <c>false</c> if configuration was read from command line arguments directly.</value>
+      public Boolean IsConfigurationConfiguration { get; }
+
+      /// <summary>
+      /// Gets any remaining arguments in case argsEndMark parameter was specified for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.
+      /// </summary>
+      /// <value>Any remaining arguments in case argsEndMark parameter was specified for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</value>
+      public ImmutableArray<String> RemainingArguments { get; }
+   }
 
 
    /// <summary>
@@ -284,35 +296,28 @@ namespace NuGetUtils.Lib.Tool
    /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
    /// <remarks>
    /// <para>The configuration types are type parameters so that the actual types could have their own dedicated <see cref="RequiredAttribute"/> and <see cref="DescriptionAttribute"/> attributes for the documentation.</para>
-   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, global::System.String[])"/> or <see cref="JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
+   /// <para>The command line arguments (or the JSON file contents) are bound to configuration type by first loading them using <see cref="CommandLineConfigurationExtensions.AddCommandLine(IConfigurationBuilder, global::System.String[])"/> or <see cref="Microsoft.Extensions.Configuration.JsonConfigurationExtensions.AddJsonFile(IConfigurationBuilder, String)"/> methods, and then extracting the type using <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method.
    /// This typically results in direct argument name -> property name binding.</para>
    /// <para>For example, specifying "--MyArgument=MyValue" would require the <typeparamref name="TCommandLineConfiguration"/> to have a (string) property named "MyArgument" which would also need to be settable.
    /// Then, after the <see cref="ConfigurationBinder.Get{T}(IConfiguration)"/> method invocation, the "MyArgument" property would have value "MyValue".</para>
    /// </remarks>
    public abstract class NuGetRestoringProgram<TCommandLineConfiguration, TConfigurationConfiguration> : Program<TCommandLineConfiguration, TConfigurationConfiguration>
-      where TCommandLineConfiguration : class, NuGetUsageConfiguration
+      where TCommandLineConfiguration : class, NuGetUsageConfiguration<LogLevel>
       where TConfigurationConfiguration : class, ConfigurationConfiguration
    {
-
-      private readonly Lazy<String> _documentation;
 
       /// <summary>
       /// Creates a new instance of <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}"/> with given documentation information and lock file cache information.
       /// </summary>
-      /// <param name="documentationInfo">The <see cref="CommandLineDocumentationInfo"/> which will be used when creating help string via <see cref="GetDocumentation"/>.</param>
       /// <param name="lockFileCacheDirEnvName">The environment variable name that is used when trying to deduce lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME"/>.</param>
       /// <param name="lockFileCacheDirWithinHomeDir">The default directory name within home directory which will hold the lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR"/>.</param>
-      /// <exception cref="ArgumentNullException">If <paramref name="documentationInfo"/> is <c>null</c>.</exception>
       public NuGetRestoringProgram(
-         CommandLineDocumentationInfo documentationInfo,
          String lockFileCacheDirEnvName = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME,
          String lockFileCacheDirWithinHomeDir = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR
          )
       {
          this.LockFileCacheDirEnvName = String.IsNullOrEmpty( lockFileCacheDirEnvName ) ? NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME : lockFileCacheDirEnvName;
          this.LockFileCacheDirWithinHomeDir = String.IsNullOrEmpty( lockFileCacheDirWithinHomeDir ) ? NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR : lockFileCacheDirWithinHomeDir;
-         this.DocumentationInfo = ArgumentValidator.ValidateNotNull( nameof( documentationInfo ), documentationInfo );
-         this._documentation = new Lazy<String>( () => this.DocumentationInfo.CreateCommandLineDocumentation( this.GetType(), typeof( TCommandLineConfiguration ), typeof( TConfigurationConfiguration ) ), LazyThreadSafetyMode.ExecutionAndPublication );
       }
 
       /// <summary>
@@ -328,20 +333,14 @@ namespace NuGetUtils.Lib.Tool
       protected String LockFileCacheDirWithinHomeDir { get; }
 
       /// <summary>
-      /// Gets the <see cref="CommandLineDocumentationInfo"/> use to build help string in <see cref="GetDocumentation"/>.
-      /// </summary>
-      /// <value>The <see cref="CommandLineDocumentationInfo"/> use to build help string in <see cref="GetDocumentation"/>.</value>
-      protected CommandLineDocumentationInfo DocumentationInfo { get; }
-
-      /// <summary>
       /// Implements <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/> by creating a new <see cref="BoundRestoreCommandUser"/>, auto-deducing current NuGet framework and SDK package ID and version, and then calling <see cref="UseRestorerAsync"/>.
       /// </summary>
-      /// <param name="info">The <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.ConfigurationInformation"/> about configuration.</param>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
       /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs.</param>
       /// <returns>Asynchornously returns return value of <see cref="UseRestorerAsync"/>.</returns>
       /// <remarks>The <see cref="BoundRestoreCommandUser"/> is disposed after the <see cref="UseRestorerAsync"/> asynchronously completes.</remarks>
       protected override Task<Int32> PerformWithConfigAsync(
-         ConfigurationInformation info,
+         ConfigurationInformation<TCommandLineConfiguration> info,
          CancellationToken token
          )
       {
@@ -360,19 +359,151 @@ namespace NuGetUtils.Lib.Tool
       /// <summary>
       /// Subclasses should override this method in order to implement their own functionality requiring <see cref="BoundRestoreCommandUser"/>.
       /// </summary>
-      /// <param name="info">The <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.ConfigurationInformation"/> about configuration.</param>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
       /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs.</param>
       /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="PerformWithConfigAsync"/>.</param>
       /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
       /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="PerformWithConfigAsync"/>.</param>
       /// <returns>The return value for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</returns>
       protected abstract Task<Int32> UseRestorerAsync(
-         ConfigurationInformation info,
+         ConfigurationInformation<TCommandLineConfiguration> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,
          String sdkPackageVersion
          );
+
+   }
+
+   /// <summary>
+   /// This class extends <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}"/> and provides ability to watch named semaphore (or file, see <see cref="ShutdownSemaphoreFactory"/>), and signal cancellation once signal is sent to semaphore/file.
+   /// </summary>
+   /// <typeparam name="TCommandLineConfiguration">The actual type that is the configuration for the program.</typeparam>
+   /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
+   /// <seealso cref="UseRestorerInParallelWithCancellationWatchingAsync"/>
+   public abstract class NuGetRestoringProgramWithShutdownCancellation<TCommandLineConfiguration, TConfigurationConfiguration> : NuGetRestoringProgram<TCommandLineConfiguration, TConfigurationConfiguration>
+      where TCommandLineConfiguration : class, NuGetUsageConfiguration<LogLevel>
+      where TConfigurationConfiguration : class, ConfigurationConfiguration
+   {
+      private readonly Func<TCommandLineConfiguration, String> _getShutdownSemaphoreName;
+
+      /// <summary>
+      /// Creates a new instance of <see cref="NuGetRestoringProgramWithShutdownCancellation{TCommandLineConfiguration, TConfigurationConfiguration}"/> with given callback to get shutdown semaphore name from configuration.
+      /// </summary>
+      /// <param name="getShutdownSemaphoreName">The callback to get shutdown semaphore name from configuration.</param>
+      /// <param name="lockFileCacheDirEnvName">The environment variable name that is used when trying to deduce lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME"/>.</param>
+      /// <param name="lockFileCacheDirWithinHomeDir">The default directory name within home directory which will hold the lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR"/>.</param>
+      public NuGetRestoringProgramWithShutdownCancellation(
+         Func<TCommandLineConfiguration, String> getShutdownSemaphoreName,
+         String lockFileCacheDirEnvName = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME,
+         String lockFileCacheDirWithinHomeDir = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR
+         ) : base( lockFileCacheDirEnvName, lockFileCacheDirWithinHomeDir )
+      {
+         this._getShutdownSemaphoreName = getShutdownSemaphoreName;
+      }
+
+      /// <summary>
+      /// Implements <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.UseRestorerAsync"/> in such way that cancellation by named semaphore is taken into account, if the configuration has non-<c>null</c> and non-empty shutdown semaphore name.
+      /// This method will call <see cref="UseRestorerInParallelWithCancellationWatchingAsync"/> to perform actual task of this program.
+      /// </summary>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
+      /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs.</param>
+      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
+      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
+      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
+      /// <returns>The return value for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</returns>
+      protected override async Task<Int32> UseRestorerAsync(
+         ConfigurationInformation<TCommandLineConfiguration> info,
+         CancellationToken token,
+         BoundRestoreCommandUser restorer,
+         String sdkPackageID,
+         String sdkPackageVersion
+         )
+      {
+         var semaphoreName = this._getShutdownSemaphoreName?.Invoke( info.Configuration );
+         Int32 retVal;
+         if ( String.IsNullOrEmpty( semaphoreName ) )
+         {
+            // No cancellation
+            retVal = await this.UseRestorerInParallelWithCancellationWatchingAsync( info, token, restorer, sdkPackageID, sdkPackageVersion );
+         }
+         else
+         {
+            using ( var cancelSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
+            {
+               async Task<Int32> WaitForShutdownSemaphore()
+               {
+                  await ShutdownSemaphoreFactory.CreateAwaiter( semaphoreName ).WaitForShutdownSignal( token );
+                  cancelSource.Cancel();
+                  return -3;
+               }
+
+               var shutdownTask = WaitForShutdownSemaphore();
+
+               // Use 'await' on maybeResultTask to extract the result - or throw an exception if task failed
+               retVal = await ( await Task.WhenAny(
+                  shutdownTask,
+                  this.UseRestorerInParallelWithCancellationWatchingAsync( info, cancelSource.Token, restorer, sdkPackageID, sdkPackageVersion )
+                  ) );
+            }
+         }
+
+         return retVal;
+      }
+
+      /// <summary>
+      /// This method is called by <see cref="UseRestorerAsync"/> in order to execute the actual task of this program.
+      /// The <paramref name="token"/> passed to this method will turn into canceled state when cancellation signal from named semaphore/file is noticed.
+      /// </summary>
+      /// <param name="info">The <see cref="ConfigurationInformation{TCommandLineConfiguration}"/> about configuration.</param>
+      /// <param name="token">The <see cref="CancellationToken"/> which gets canceled when the <see cref="Console.CancelKeyPress"/> event occurs, or when cancellation signal from named semaphore/file is noticed.</param>
+      /// <param name="restorer">The <see cref="BoundRestoreCommandUser"/> created by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
+      /// <param name="sdkPackageID">The SDK package ID auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>. Typically <c>Microsoft.NETCore.App</c>.</param>
+      /// <param name="sdkPackageVersion">The SDK packageversion auto-deduced by the <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}.PerformWithConfigAsync"/>.</param>
+      /// <returns>The return value for <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.MainAsync"/>.</returns>
+      protected abstract Task<Int32> UseRestorerInParallelWithCancellationWatchingAsync(
+         ConfigurationInformation<TCommandLineConfiguration> info,
+         CancellationToken token,
+         BoundRestoreCommandUser restorer,
+         String sdkPackageID,
+         String sdkPackageVersion
+         );
+
+   }
+
+   /// <summary>
+   /// This class enhances <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}"/> with automatically generated documentation.
+   /// </summary>
+   /// <typeparam name="TCommandLineConfiguration">The actual type that is the configuration for the program.</typeparam>
+   /// <typeparam name="TConfigurationConfiguration">The actual type which specifies the JSON configuration file location.</typeparam>
+   public abstract class NuGetRestoringProgramWithDocumentation<TCommandLineConfiguration, TConfigurationConfiguration> : NuGetRestoringProgram<TCommandLineConfiguration, TConfigurationConfiguration>
+      where TCommandLineConfiguration : class, NuGetUsageConfiguration<LogLevel>
+      where TConfigurationConfiguration : class, ConfigurationConfiguration
+   {
+      private readonly Lazy<String> _documentation;
+
+      /// <summary>
+      /// Creates a new instance of <see cref="NuGetRestoringProgram{TCommandLineConfiguration, TConfigurationConfiguration}"/> with given documentation information and lock file cache information.
+      /// </summary>
+      /// <param name="documentationInfo">The <see cref="CommandLineDocumentationInfo"/> which will be used when creating help string via <see cref="GetDocumentation"/>.</param>
+      /// <param name="lockFileCacheDirEnvName">The environment variable name that is used when trying to deduce lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME"/>.</param>
+      /// <param name="lockFileCacheDirWithinHomeDir">The default directory name within home directory which will hold the lock file cache directory. By default is <see cref="NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR"/>.</param>
+      /// <exception cref="ArgumentNullException">If <paramref name="documentationInfo"/> is <c>null</c>.</exception>
+      public NuGetRestoringProgramWithDocumentation(
+         CommandLineDocumentationInfo documentationInfo,
+         String lockFileCacheDirEnvName = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_ENV_NAME,
+         String lockFileCacheDirWithinHomeDir = NuGetRestoringProgramConsts.LOCK_FILE_CACHE_DIR_WITHIN_HOME_DIR
+         ) : base( lockFileCacheDirEnvName, lockFileCacheDirWithinHomeDir )
+      {
+         this.DocumentationInfo = ArgumentValidator.ValidateNotNull( nameof( documentationInfo ), documentationInfo );
+         this._documentation = new Lazy<String>( () => this.DocumentationInfo.CreateCommandLineDocumentation( this.GetType(), typeof( TCommandLineConfiguration ), typeof( TConfigurationConfiguration ) ), LazyThreadSafetyMode.ExecutionAndPublication );
+      }
+
+      /// <summary>
+      /// Gets the <see cref="CommandLineDocumentationInfo"/> use to build help string in <see cref="GetDocumentation"/>.
+      /// </summary>
+      /// <value>The <see cref="CommandLineDocumentationInfo"/> use to build help string in <see cref="GetDocumentation"/>.</value>
+      protected CommandLineDocumentationInfo DocumentationInfo { get; }
 
       /// <summary>
       /// Implements the <see cref="Program{TCommandLineConfiguration, TConfigurationConfiguration}.GetDocumentation"/> and returns string created by <see cref="E_NuGetUtils.CreateCommandLineDocumentation"/>.
@@ -522,5 +653,28 @@ public static partial class E_NuGetUtils
             ArgumentValidator.ValidateNotEmpty( nameof( configInfo.Purpose ), configInfo.Purpose ),
             configName
          );
+   }
+
+   /// <summary>
+   /// This method gets the default callback which will provide object instances based on command line arguments.
+   /// </summary>
+   /// <typeparam name="TCommandLineConfiguration">The type of command line configuration.</typeparam>
+   /// <param name="info">This <see cref="ConfigurationInformation{TCommandLineConfiguration}"/>.</param>
+   /// <param name="processArguments">The arguments that were given to this process.</param>
+   /// <returns>A callback which will provide object instances based on object type, using Microsoft.Extensions.Configuration.Bind package.</returns>
+   public static Func<Type, Object> GetAdditonalTypeProvider<TCommandLineConfiguration>(
+      this ConfigurationInformation<TCommandLineConfiguration> info,
+      String[] processArguments
+      )
+      where TCommandLineConfiguration : class
+   {
+      var programArgs = new Lazy<String[]>( () => info.IsConfigurationConfiguration ? ( processArguments ?? Empty<String>.Array ).Concat( info.RemainingArguments ).ToArray() : info.RemainingArguments.ToArray() );
+      var programArgsConfig = new Lazy<IConfigurationRoot>( () => new ConfigurationBuilder().AddCommandLine( programArgs.Value ).Build() );
+      return type =>
+      {
+         return Equals( type, typeof( String[] ) ) ?
+            programArgs.Value :
+            programArgsConfig.Value.Get( type );
+      };
    }
 }

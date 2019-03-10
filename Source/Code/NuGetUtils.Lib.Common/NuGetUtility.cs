@@ -66,6 +66,7 @@ namespace NuGetUtils.Lib.Common
 #if NUGET_430 || NUGET_440 || NUGET_450
       private static readonly NuGetFramework NETCOREAPP21 = new NuGetFramework( FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version( 2, 1, 0, 0 ) );
 #endif
+      private static readonly NuGetFramework NETCOREAPP22 = new NuGetFramework( FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version( 2, 2, 0, 0 ) );
 
       /// <summary>
       /// Gets the matching assembly path from set of assembly paths, the expanded home path of the package, and optional assembly path from "outside world", e.g. configuration.
@@ -230,9 +231,11 @@ namespace NuGetUtils.Lib.Common
                   break;
                case SDK_PACKAGE_NETCORE:
                   {
+#if !NET46
                      retVal = TryDetectSDKPackgeIDFromPaths( sdkPackageID );
                      if ( String.IsNullOrEmpty( retVal ) )
                      {
+#endif
                         var version = framework.Version;
                         switch ( version.Major )
                         {
@@ -268,7 +271,10 @@ namespace NuGetUtils.Lib.Common
                               retVal = null;
                               break;
                         }
+
+#if !NET46
                      }
+#endif
                   }
                   break;
                default:
@@ -278,6 +284,8 @@ namespace NuGetUtils.Lib.Common
          }
          return retVal;
       }
+
+#if !NET46
 
       private static String TryDetectSDKPackgeIDFromPaths(
          String sdkPackageID
@@ -304,6 +312,8 @@ namespace NuGetUtils.Lib.Common
 
          return retVal;
       }
+
+#endif
 
       /// <summary>
       /// This is helper method to try and deduce the <see cref="NuGetFramework"/> representing the currently running process.
@@ -366,6 +376,7 @@ namespace NuGetUtils.Lib.Common
                      // Core 1.1: ".NET Core 4.6.25211.01"
                      // Core 2.0: ".NET Core 4.6.00001.0"
                      // Core 2.1: ".NET Core 4.6.26614.01" (and also ".NET Core 4.6.26919.02")
+                     // Core 2.2: ".NET Core 4.6.27110.4"
                      switch ( netCoreVersion.Build )
                      {
                         case 25211:
@@ -380,7 +391,8 @@ namespace NuGetUtils.Lib.Common
 #endif
                            ;
                            break;
-                        default:
+                        case 26614:
+                        case 26919:
                            retVal =
 #if !NUGET_430 && !NUGET_440 && !NUGET_450
                               FrameworkConstants.CommonFrameworks.NetCoreApp21
@@ -388,6 +400,9 @@ namespace NuGetUtils.Lib.Common
                               NETCOREAPP21
 #endif
                               ;
+                           break;
+                        default:
+                           retVal = NETCOREAPP22;
                            break;
                      }
                   }

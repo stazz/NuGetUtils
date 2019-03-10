@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.6;net46</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <TreatSpecificWarningsAsErrors />
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Exec.Agnostic\NuGetUtils.Lib.Exec.Agnostic.csproj" />
+    <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Restore.Agnostic\NuGetUtils.Lib.Restore.Agnostic.csproj" />
+    <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Tool.Agnostic\NuGetUtils.Lib.Tool.Agnostic.csproj" />
+
+    <PackageReference Include="UtilPack" Version="1.8.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Threading.Tasks" />
+    <Reference Include="System.Collections" />
+  </ItemGroup>
+
+  <!-- Assembly information stuff -->
+  <PropertyGroup>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix></VersionSuffix>
+    <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
+    <Description>Common functionality for various parts of NuGet.MSBuild.Exec package.</Description>
+  </PropertyGroup>
+
+  <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>

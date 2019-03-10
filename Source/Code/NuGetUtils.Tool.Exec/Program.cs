@@ -40,7 +40,7 @@ namespace NuGetUtils.Tool.Exec
 
    }
 
-   internal sealed class NuGetExecutingProgram : NuGetRestoringProgram<NuGetExecutionConfigurationImpl, ConfigurationConfigurationImpl>
+   internal sealed class NuGetExecutingProgram : NuGetRestoringProgramWithDocumentation<NuGetExecutionConfigurationImpl, ConfigurationConfigurationImpl>
    {
       internal const String EXEC_ARGS_SEPARATOR = "--";
 
@@ -68,14 +68,14 @@ namespace NuGetUtils.Tool.Exec
       }
 
       protected override Boolean ValidateConfiguration(
-         ConfigurationInformation info
+         ConfigurationInformation<NuGetExecutionConfigurationImpl> info
          )
       {
-         return !String.IsNullOrEmpty( info.Configuration.PackageID );
+         return info.Configuration.ValidateConfiguration();
       }
 
       protected override async Task<Int32> UseRestorerAsync(
-         ConfigurationInformation info,
+         ConfigurationInformation<NuGetExecutionConfigurationImpl> info,
          CancellationToken token,
          BoundRestoreCommandUser restorer,
          String sdkPackageID,
@@ -83,22 +83,16 @@ namespace NuGetUtils.Tool.Exec
          )
       {
          var config = info.Configuration;
-         var programArgs = new Lazy<String[]>( () => info.IsConfigurationConfiguration ? ( config.ProcessArguments ?? Empty<String>.Array ).Concat( info.RemainingArguments ).ToArray() : info.RemainingArguments.ToArray() );
-         var programArgsConfig = new Lazy<IConfigurationRoot>( () => new ConfigurationBuilder().AddCommandLine( programArgs.Value ).Build() );
-
-         return await config.ExecuteMethodWithinNuGetAssemblyAsync(
+         var maybeResult = await config.ExecuteMethodAndSerializeReturnValue(
             token,
             restorer,
-            type =>
-            {
-               return Equals( type, typeof( String[] ) ) ?
-                  programArgs.Value :
-                  programArgsConfig.Value.Get( type );
-            },
-            config.RestoreSDKPackage ?
-               await restorer.RestoreIfNeeded( sdkPackageID, sdkPackageVersion, token ) :
-               default( EitherOr<IEnumerable<String>, NuGet.ProjectModel.LockFile> )
+            info.GetAdditonalTypeProvider( config.ProcessArguments ),
+            sdkPackageID,
+            sdkPackageVersion
             );
+         return maybeResult.IsFirst ?
+            ( maybeResult.First is Int32 actualInt ? actualInt : 0 )
+            : -3;
       }
    }
 }
