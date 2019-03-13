@@ -228,8 +228,12 @@ namespace NuGetUtils.MSBuild.Exec
          this.ThisRuntimeID = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.ThisRuntimeID ), result.ThisRuntimeID );
          this.PackageID = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.PackageID ), result.PackageID );
          this.PackageVersion = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.PackageVersion ), result.PackageVersion );
+
+#if !NET46
          this.SDKPackageID = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.SDKPackageID ), result.SDKPackageID );
          this.SDKPackageVersion = NotEmptyIfNoErrors( hasErrors, nameof( EnvironmentInspectionResult.SDKPackageVersion ), result.SDKPackageVersion );
+#endif
+
          this.Errors = result.Errors?.ToImmutableArray() ?? ImmutableArray<String>.Empty;
       }
 
