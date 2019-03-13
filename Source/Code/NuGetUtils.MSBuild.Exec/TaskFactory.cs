@@ -181,7 +181,7 @@ namespace NuGetUtils.MSBuild.Exec
                else
                {
                   var msg = $"Detected current NuGet framework to be \"{env.ThisFramework}\", with RID \"{env.ThisRuntimeID}\".";
-                  if (be == null)
+                  if ( be == null )
                   {
                      Console.Out.WriteLine( msg );
                   }
