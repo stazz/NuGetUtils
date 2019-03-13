@@ -57,7 +57,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>2.0.0</VersionPrefix>
+    <VersionPrefix>2.0.1</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>Contains task factory to execute methods from assemblies of NuGet packages.</Description>
@@ -68,7 +68,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>This release makes the task factory itself independant of NuGet version, thus solving a lot of problems and headaches on .NET Core. The NuGet functionality is encapsulated into invocation of child processes.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixing a bug with incorrect .exe.config files for .NET Desktop version.</PackageReleaseNotes>
     <PackageTags>nuget utils msbuild exec</PackageTags>
     <Title>NuGetUtils: Package Executor MSBuild TaskFactory</Title>
 
