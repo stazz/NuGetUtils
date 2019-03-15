@@ -6,3 +6,8 @@ The extension method for `NuGetDeploymentConfiguration`, called `DeployAsync` wi
 # Distribution
 
 See [NuGet package](http://www.nuget.org/packages/NuGetUtils.Lib.Deployment) for binary distribution.
+
+# TODO
+
+This project needs a refactor: Use the ExtractAssemblyPaths extension method on restorer to find out all assembly paths of the package to be restored.
+The current deployment code is quite a mess.
