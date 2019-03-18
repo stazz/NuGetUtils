@@ -526,7 +526,7 @@ public static partial class E_NuGetUtils
          var packageID = configuration.PackageID;
          var packageVersion = configuration.PackageVersion;
 
-         var assembly = ( await assemblyLoader.LoadNuGetAssembly( packageID, packageVersion, token, configuration.AssemblyPath ) ) ?? throw new ArgumentException( $"Could not find package \"{packageID}\" at {( String.IsNullOrEmpty( packageVersion ) ? "latest version" : ( "version \"" + packageVersion + "\"" ) )} with path \"{configuration.AssemblyPath}\"." );
+         var assembly = ( await assemblyLoader.LoadNuGetAssembly( packageID, packageVersion, token, configuration.AssemblyPath ) ) ?? throw new ArgumentException( $"Could not find assembly {( configuration.AssemblyPath.IsNullOrEmpty() ? "" : ( "\"" + configuration.AssemblyPath + "\"" ) )} within package \"{packageID}\" at {( String.IsNullOrEmpty( packageVersion ) ? "latest version" : ( "version \"" + packageVersion + "\"" ) )} with path \"{configuration.AssemblyPath}\"." );
          return await useMethod( assemblyLoader, configuration.FindSuitableMethod( assembly ) );
       }
    }

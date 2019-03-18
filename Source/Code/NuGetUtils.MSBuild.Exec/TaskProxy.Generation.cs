@@ -84,12 +84,22 @@ namespace NuGetUtils.MSBuild.Exec
          var outPropertyInfos = new List<(String, Type, FieldBuilder)>();
          var interfacePropertyInfos = new List<(String, Type, FieldBuilder)>();
 
-         var taskItemFullName = typeof( ITaskItem ).FullName + "[]";
          var properties = inputs
-            .Select( p => (p, new TaskPropertyInfo( p.PropertyName, typeof( String ), false, p.IsRequired )) )
-            .Concat( outputs.Select( p => (p, new TaskPropertyInfo( p.PropertyName, String.Equals( taskItemFullName, p.TypeName, StringComparison.Ordinal ) ? typeof( ITaskItem[] ) : typeof( String ), true, p.IsRequired )) ) )
+            .Select( p => (p, new TaskPropertyInfo( p.PropertyName, p.TypeName.GetTaskPropertyType(), false, p.IsRequired )) )
+            .Concat( outputs.Select( p => (p, new TaskPropertyInfo( p.PropertyName, p.TypeName.GetTaskPropertyType(), true, p.IsRequired )) ) )
             .ToImmutableArray();
-
+         void EmitCastToCorrectType( Type propType )
+         {
+            if ( Equals( typeof( String ), propType ) )
+            {
+               il.Emit( OpCodes.Call, toStringCall );
+            }
+            else
+            {
+               // Typically ITaskItem[]
+               il.Emit( OpCodes.Castclass, propType );
+            }
+         }
 
          foreach ( var property in properties
             .Concat( new (InspectionExecutableParameterInfo, TaskPropertyInfo)[] {
@@ -131,7 +141,7 @@ namespace NuGetUtils.MSBuild.Exec
                il.Emit( OpCodes.Ldfld, taskField );
                il.Emit( OpCodes.Ldstr, propName );
                il.Emit( OpCodes.Callvirt, taskRefGetter );
-               il.Emit( OpCodes.Call, toStringCall );
+               EmitCastToCorrectType( propType );
             }
             il.Emit( OpCodes.Ret );
 
@@ -217,7 +227,8 @@ namespace NuGetUtils.MSBuild.Exec
                il.Emit( OpCodes.Ldfld, taskField );
                il.Emit( OpCodes.Ldstr, outSetter.Item1 );
                il.Emit( OpCodes.Callvirt, taskRefGetter );
-               il.Emit( OpCodes.Call, toStringCall );
+               // Interesting thing is that setting some wrongly-typed value to a field works, but then reading the field just throws... I guess they changed PE verification?
+               EmitCastToCorrectType( outSetter.Item2 );
                il.Emit( OpCodes.Stfld, outSetter.Item3 );
             }
             il.EndExceptionBlock();
@@ -281,5 +292,20 @@ namespace NuGetUtils.MSBuild.Exec
       public Type GeneratedType { get; }
 
       public TaskPropertyInfo[] Properties { get; } // Not ImmutableArray since the return type of ITaskFactory.GetTaskParameters is just simple array
+   }
+}
+
+public static partial class E_NuGetUtils
+{
+   internal static Boolean IsTaskItemType( this String typeFullName )
+   {
+      return typeFullName.EndsWith( "[]" );
+   }
+
+   internal static Type GetTaskPropertyType( this String typeFullName )
+   {
+      return typeFullName.IsTaskItemType() ?
+         typeof( ITaskItem[] ) :
+         typeof( String );
    }
 }

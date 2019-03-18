@@ -18,6 +18,7 @@
 using Microsoft.Build.Framework;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NuGetUtils.MSBuild.Exec;
 using NuGetUtils.MSBuild.Exec.Common;
 using System;
 using System.Collections.Generic;
@@ -28,10 +29,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
+using TaskItem = Microsoft.Build.Utilities.TaskItem;
 
 namespace NuGetUtils.MSBuild.Exec
 {
-   using TaskItem = Microsoft.Build.Utilities.TaskItem;
 
    public sealed class TaskProxy
    {
@@ -125,7 +126,7 @@ namespace NuGetUtils.MSBuild.Exec
                         {
                            var valInfo = kvp.Value;
                            var val = valInfo.Value;
-                           return new JProperty( kvp.Key, valInfo.IsTaskItemArray ? new JArray( ( (ITaskItem[]) val ).Select( v => v.ItemSpec ).ToArray() ) : val );
+                           return new JProperty( kvp.Key, valInfo.GetInputPropertyValue() );
                         } )
                      ).ToString( Formatting.None ),
                },
@@ -171,10 +172,7 @@ namespace NuGetUtils.MSBuild.Exec
                      )
                   {
                      var jProp = tuple.p;
-                     var jValue = jProp.Value;
-                     this._propertyInfos[jProp.Name].Value = tuple.Item2.IsTaskItemArray ?
-                        (Object) ( ( jValue as JArray )?.Select( j => new TaskItem( ( j as JValue )?.Value?.ToString() ?? "" ) )?.ToArray() ?? Empty<TaskItem>.Array ) :
-                        ( jProp.Value as JValue )?.Value?.ToString();
+                     this._propertyInfos[jProp.Name].Value = tuple.Item2.GetOutputPropertyValue( jProp.Value );
                   }
                }
             }
@@ -204,7 +202,7 @@ namespace NuGetUtils.MSBuild.Exec
          return retVal;
       }
 
-      private sealed class TaskPropertyHolder
+      internal sealed class TaskPropertyHolder
       {
          public TaskPropertyHolder(
             Boolean isOutput,
@@ -219,5 +217,27 @@ namespace NuGetUtils.MSBuild.Exec
          public Boolean IsTaskItemArray { get; }
          public Object Value { get; set; }
       }
+   }
+}
+
+public static partial class E_NuGetUtils
+{
+   // TODO in the NuGetUtils.MSBuild.Exec.Inspect, check the type of the array. If it is
+   // string -> use ItemSpec
+   // other primitive -> use Convert.ChangeType( ItemSpec)
+   // non-primitve -> use new JObject() { properties built from task item metadata ... }
+   internal static JToken GetInputPropertyValue( this TaskProxy.TaskPropertyHolder propertyHolder )
+   {
+      var val = propertyHolder.Value;
+      return propertyHolder.IsTaskItemArray ?
+         (JToken) new JArray( ( (ITaskItem[]) val ).Select( v => v.ItemSpec ).ToArray() ) :
+         new JValue( val );
+   }
+
+   internal static Object GetOutputPropertyValue( this TaskProxy.TaskPropertyHolder propertyHolder, JToken token )
+   {
+      return propertyHolder.IsTaskItemArray ?
+         (Object) ( ( token as JArray )?.Select( j => new TaskItem( ( j as JValue )?.Value?.ToString() ?? "" ) )?.ToArray() ?? Empty<TaskItem>.Array ) :
+         ( token as JValue )?.Value?.ToString();
    }
 }

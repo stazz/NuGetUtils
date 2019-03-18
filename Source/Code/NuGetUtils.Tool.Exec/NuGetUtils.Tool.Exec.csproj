@@ -21,7 +21,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-     <VersionPrefix>1.1.0</VersionPrefix>
+     <VersionPrefix>2.0.0</VersionPrefix>
      <VersionSuffix></VersionSuffix>
      <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
      <Description>This tool will restore the given NuGet package and then execute a method within the restored DLLs. The method does not need to be marked as entrypoint, and it may contain other parameter types than the default string array type.</Description>
@@ -31,7 +31,7 @@
   <PropertyGroup>
      <PackageVersion>$(VersionPrefix)</PackageVersion>
      <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-     <PackageReleaseNotes>Updated to newer NuGet.Commands.</PackageReleaseNotes>
+     <PackageReleaseNotes>Updated to newer NuGet.Commands version. Also added possibility to specify where to save the output of the return value of the method to be executed. Furthermore, there was an internal refactor on how entrypoint methods are looked up.</PackageReleaseNotes>
      <PackageTags>nuget package execute assembly tool load managed</PackageTags>
      <Title>NuGetUtils: Package Executor Tool</Title>
   </PropertyGroup>

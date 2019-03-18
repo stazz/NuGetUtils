@@ -61,11 +61,11 @@ namespace NuGetUtils.MSBuild.Exec
       private InitializationResult _initResult;
 
       public Boolean Initialize(
-         String taskName,
-         IDictionary<String, TaskPropertyInfo> parameterGroup,
-         String taskBody,
-         IBuildEngine taskFactoryLoggingHost
-         )
+        String taskName,
+        IDictionary<String, TaskPropertyInfo> parameterGroup,
+        String taskBody,
+        IBuildEngine taskFactoryLoggingHost
+        )
       {
          InitializationResult initResult = null;
          try

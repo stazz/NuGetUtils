@@ -21,7 +21,7 @@
 
    <!-- Assembly information stuff -->
    <PropertyGroup>
-      <VersionPrefix>1.1.0</VersionPrefix>
+      <VersionPrefix>1.2.0</VersionPrefix>
       <VersionSuffix></VersionSuffix>
       <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
       <Description>This tool will deploy the given NuGet package by copying the DLL and generating .deps.json and .runtimeconfig.json files, or by copying all non-framework assemblies into single folder.</Description>
@@ -31,7 +31,7 @@
    <PropertyGroup>
       <PackageVersion>$(VersionPrefix)</PackageVersion>
       <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-      <PackageReleaseNotes>Updated to newer NuGet.Commands.</PackageReleaseNotes>
+      <PackageReleaseNotes>Updated to newer NuGet.Commands version.</PackageReleaseNotes>
       <PackageTags>nuget package deploy assembly tool</PackageTags>
       <Title>NuGetUtils: Package Deployer Tool</Title>
    </PropertyGroup>

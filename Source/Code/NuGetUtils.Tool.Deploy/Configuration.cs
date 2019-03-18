@@ -17,9 +17,7 @@
  */
 using NuGet.Common;
 using NuGetUtils.Lib.Deployment;
-using NuGetUtils.Lib.Restore;
 using NuGetUtils.Lib.Restore.Agnostic;
-using NuGetUtils.Lib.Tool;
 using NuGetUtils.Lib.Tool.Agnostic;
 using System;
 using UtilPack.Documentation;

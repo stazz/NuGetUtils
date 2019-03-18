@@ -20,7 +20,7 @@
 
    <!-- Assembly information stuff -->
    <PropertyGroup>
-      <VersionPrefix>1.1.0</VersionPrefix>
+      <VersionPrefix>1.2.0</VersionPrefix>
       <VersionSuffix></VersionSuffix>
       <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
       <Description>This tool will restore the given NuGet package.</Description>
@@ -30,7 +30,7 @@
    <PropertyGroup>
       <PackageVersion>$(VersionPrefix)</PackageVersion>
       <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-      <PackageReleaseNotes>Updated to newer NuGet.Commands.</PackageReleaseNotes>
+      <PackageReleaseNotes>Updated to newer NuGet.Commands version.</PackageReleaseNotes>
       <PackageTags>nuget package restore tool</PackageTags>
       <Title>NuGetUtils: Package Restorer Tool</Title>
    </PropertyGroup>

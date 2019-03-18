@@ -41,6 +41,7 @@ namespace NuGetUtils.MSBuild.Exec.Common
       public String TypeName { get; set; }
       public Boolean IsRequired { get; set; }
       public Boolean IsEnum { get; set; }
+      // TODO public { String TypeName; { String Name; String Type; }[] Properties; } ArrayElementTypeInfo
    }
 }
 
