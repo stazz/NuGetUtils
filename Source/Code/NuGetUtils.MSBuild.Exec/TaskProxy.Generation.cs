@@ -84,7 +84,6 @@ namespace NuGetUtils.MSBuild.Exec
          var outPropertyInfos = new List<(String, Type, FieldBuilder)>();
          var interfacePropertyInfos = new List<(String, Type, FieldBuilder)>();
 
-         var taskItemFullName = typeof( ITaskItem ).FullName + "[]";
          var properties = inputs
             .Select( p => (p, new TaskPropertyInfo( p.PropertyName, p.TypeName.GetTaskPropertyType(), false, p.IsRequired )) )
             .Concat( outputs.Select( p => (p, new TaskPropertyInfo( p.PropertyName, p.TypeName.GetTaskPropertyType(), true, p.IsRequired )) ) )

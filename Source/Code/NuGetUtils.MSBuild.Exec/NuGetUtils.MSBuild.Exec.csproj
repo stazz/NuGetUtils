@@ -57,7 +57,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>2.0.1</VersionPrefix>
+    <VersionPrefix>2.0.2</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>Contains task factory to execute methods from assemblies of NuGet packages.</Description>
@@ -68,7 +68,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Fixing a bug with incorrect .exe.config files for .NET Desktop version.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixing a bug which caused incorrectly typed properties and values when using ITaskItem arrays.</PackageReleaseNotes>
     <PackageTags>nuget utils msbuild exec</PackageTags>
     <Title>NuGetUtils: Package Executor MSBuild TaskFactory</Title>
 
