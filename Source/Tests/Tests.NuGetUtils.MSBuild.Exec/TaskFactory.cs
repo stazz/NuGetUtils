@@ -24,6 +24,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using UtilPack;
+using TaskItem = Microsoft.Build.Utilities.TaskItem;
 
 namespace Tests.NuGetUtils.MSBuild.Exec
 {
@@ -62,8 +64,6 @@ namespace Tests.NuGetUtils.MSBuild.Exec
       [TestMethod]
       public void TestSimpleUseCase()
       {
-         //global::NuGetUtils.MSBuild.Exec.Discover.Program.Main( new[] { "/ConfigurationFileLocation=-" } ).GetAwaiter().GetResult();
-
          var factory = new NuGetExecutionTaskFactory();
          Assert.IsTrue( factory.Initialize(
             null,
@@ -79,11 +79,36 @@ namespace Tests.NuGetUtils.MSBuild.Exec
 
          const String TEST_VALUE = "Testing";
          var task = factory.CreateTask( null );
-         var property = task.GetType().GetRuntimeProperty( "Value" );
-         property.SetMethod.Invoke( task, new[] { TEST_VALUE } );
+         task.GetType().GetRuntimeProperty( "Value" ).SetMethod.Invoke( task, new[] { TEST_VALUE } );
          Assert.IsTrue( task.Execute() );
-         Assert.AreEqual( TEST_VALUE, property.GetMethod.Invoke( task, null ) );
+         var outputProperty = task.GetType().GetRuntimeProperty( "Result" );
+         Assert.AreEqual( TEST_VALUE, outputProperty.GetMethod.Invoke( task, null ) );
 
+      }
+
+      [TestMethod]
+      public void TestTaskItemSpecEcho()
+      {
+         var factory = new NuGetExecutionTaskFactory();
+         Assert.IsTrue( factory.Initialize(
+            null,
+            null,
+            new XElement( "TaskBody",
+               new XElement( "PackageID", "NuGetUtils.MSBuild.Exec.TestPackage" ),
+               new XElement( "PackageVersion", "1.0.0" ),
+               new XElement( "EntryPointTypeName", "NuGetUtils.MSBuild.Exec.TestPackage.EntryPoints" ),
+               new XElement( "EntryPointMethodName", "EchoTaskItemSpec" )
+               ).ToString(),
+            null
+            ) );
+
+         const String TEST_VALUE = "Testing";
+         var input = new TaskItem[] { new TaskItem( TEST_VALUE ) };
+         var task = factory.CreateTask( null );
+         task.GetType().GetRuntimeProperty( "Value" ).SetMethod.Invoke( task, new Object[] { input } );
+         Assert.IsTrue( task.Execute() );
+         var outputProperty = task.GetType().GetRuntimeProperty( "Result" );
+         Assert.IsTrue( ArrayEqualityComparer<TaskItem>.ArrayEquality( input, (TaskItem[]) outputProperty.GetMethod.Invoke( task, null ), ( t1, t2 ) => String.Equals( t1.ItemSpec, t2.ItemSpec ) ) );
       }
 
       [TestMethod, Timeout( 30000 )]
@@ -108,7 +133,7 @@ namespace Tests.NuGetUtils.MSBuild.Exec
          var cancellationTokenSource = (CancellationTokenSource) taskProxy.GetType().GetTypeInfo().DeclaredFields.First( f => String.Equals( f.Name, "_cancellationTokenSource" ) ).GetValue( taskProxy );
          var executeTask = taskProxy.ExecuteAsync( null );
          cancellationTokenSource.CancelAfter( 10000 );
-         await executeTask;
+         Assert.IsFalse( await executeTask );
       }
    }
 }
