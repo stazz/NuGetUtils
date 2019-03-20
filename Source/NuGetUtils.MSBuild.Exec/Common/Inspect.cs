@@ -29,10 +29,17 @@ namespace NuGetUtils.MSBuild.Exec.Common
 
    public sealed class PackageInspectionResult
    {
+      public String ExactPackageVersion { get; set; }
+      public MethodInspectionResult[] SuitableMethods { get; set; }
+   }
+
+   public sealed class MethodInspectionResult
+   {
       public Int32 MethodToken { get; set; }
+      public String TypeName { get; set; }
+      public String MethodName { get; set; }
       public ExecutableParameterInfo[] InputParameters { get; set; }
       public ExecutableParameterInfo[] OutputParameters { get; set; }
-      public String ExactPackageVersion { get; set; }
    }
 
    public sealed class ExecutableParameterInfo
