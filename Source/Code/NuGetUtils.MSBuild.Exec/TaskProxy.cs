@@ -97,14 +97,18 @@ namespace NuGetUtils.MSBuild.Exec
 
       public async Task<Boolean> ExecuteAsync( IBuildEngine be )
       {
+         const String PROCESS = "NuGetUtils.MSBuild.Exec.Perform";
          // Call process, deserialize result, set output properties.
          var tempFileLocation = Path.Combine( Path.GetTempPath(), $"NuGetUtilsExec_" + Guid.NewGuid() );
 
          Boolean retVal;
          try
          {
+            await be.LogProcessInvocationMessage( PROCESS );
+            var startTime = DateTime.UtcNow;
+
             var returnCode = await this._processMonitor.CallProcessAndStreamOutputAsync(
-               "NuGetUtils.MSBuild.Exec.Perform",
+               PROCESS,
                new PerformConfiguration<String>
                {
                   NuGetConfigurationFile = this._initializationArgs.SettingsLocation,
@@ -160,6 +164,8 @@ namespace NuGetUtils.MSBuild.Exec
                   return null;
                }
                );
+            await be.LogProcessEndMessage( PROCESS, startTime );
+
             if ( returnCode.HasValue && File.Exists( tempFileLocation ) )
             {
                using ( var sReader = new StreamReader( File.Open( tempFileLocation, FileMode.Open, FileAccess.Read, FileShare.None ), new UTF8Encoding( false, false ), false ) )

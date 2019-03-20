@@ -161,6 +161,7 @@ namespace NuGetUtils.MSBuild.Exec
                   args.PackageIDIsSelf,
                   projectFilePath
                   ),
+                  be,
                   token );
                InitializationResult initializationResult = null;
                if ( env.Errors.Length > 0 )
@@ -180,15 +181,7 @@ namespace NuGetUtils.MSBuild.Exec
                }
                else
                {
-                  var msg = $"Detected current NuGet framework to be \"{env.ThisFramework}\", with RID \"{env.ThisRuntimeID}\".";
-                  if ( be == null )
-                  {
-                     Console.Out.WriteLine( msg );
-                  }
-                  else
-                  {
-                     be.LogMessageEvent( new BuildMessageEventArgs( msg, null, null, MessageImportance.Normal ) );
-                  }
+                  await be.LogMessageOrWriteToConsoleOut( $"Detected current NuGet framework to be \"{env.ThisFramework}\", with RID \"{env.ThisRuntimeID}\"." );
 
                   var inspection = await _cache.InspectPackageAsync( env, new InspectionKey(
                         env.ThisFramework,
@@ -200,6 +193,7 @@ namespace NuGetUtils.MSBuild.Exec
                         args.MethodName
                      ),
                      args.RestoreSDKPackage,
+                     be,
                      token
                      );
                   var typeGenResult = TaskTypeGenerator.Instance.GenerateTaskType(

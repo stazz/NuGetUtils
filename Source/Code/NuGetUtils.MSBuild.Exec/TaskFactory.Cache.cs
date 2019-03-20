@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using Microsoft.Build.Framework;
 using Newtonsoft.Json;
 using NuGetUtils.Lib.Tool.Agnostic;
 using NuGetUtils.MSBuild.Exec.Common;
@@ -76,16 +77,21 @@ namespace NuGetUtils.MSBuild.Exec
 
       public async Task<EnvironmentValue> DetectEnvironmentAsync(
          EnvironmentKeyInfo keyInfo,
+         IBuildEngine be,
          CancellationToken token
          )
       {
+         const String PROCESS = "NuGetUtils.MSBuild.Exec.Discover";
          return await this._environments.GetOrAdd( keyInfo, theKeyInfo => new UtilPack.AsyncLazy<EnvironmentValue>( async () =>
          {
             var key = theKeyInfo.Key;
             var packageIDIsSelf = theKeyInfo.PackageIDIsProjectPath;
 
+            await be.LogProcessInvocationMessage( PROCESS );
+            var startTime = DateTime.UtcNow;
+
             var env = await this.ProcessMonitor.CallProcessAndGetResultAsync<DiscoverConfiguration<String>, EnvironmentInspectionResult>(
-               "NuGetUtils.MSBuild.Exec.Discover",
+               PROCESS,
                new DiscoverConfiguration<String>()
                {
                   DisableLogging = true,
@@ -105,6 +111,8 @@ namespace NuGetUtils.MSBuild.Exec
                },
                token
                );
+            await be.LogProcessEndMessage( PROCESS, startTime );
+
             var result = env.GetFirstOrDefault();
             if ( result == null )
             {
@@ -119,14 +127,19 @@ namespace NuGetUtils.MSBuild.Exec
          EnvironmentValue environment,
          InspectionKey key,
          Boolean restoreSDKPackage,
+         IBuildEngine be,
          CancellationToken token
          )
       {
+         const String PROCESS = "NuGetUtils.MSBuild.Exec.Inspect";
+
          return await this._inspections.GetOrAdd( key, theKey => new UtilPack.AsyncLazy<InspectionValue>( async () =>
          {
+            await be.LogProcessInvocationMessage( PROCESS );
 
+            var startTime = DateTime.UtcNow;
             var env = await this.ProcessMonitor.CallProcessAndGetResultAsync<InspectConfiguration<String>, PackageInspectionResult>(
-               "NuGetUtils.MSBuild.Exec.Inspect",
+               PROCESS,
                new InspectConfiguration<String>()
                {
                   DisableLogging = true,
@@ -150,6 +163,8 @@ namespace NuGetUtils.MSBuild.Exec
                },
                token
                );
+            await be.LogProcessEndMessage( PROCESS, startTime );
+
             var result = env.GetFirstOrDefault();
             if ( result == null )
             {
@@ -339,6 +354,29 @@ namespace NuGetUtils.MSBuild.Exec
       internal static String DefaultIfNullOrEmpty( this String value, Func<String> defaultValueFactory )
       {
          return String.IsNullOrEmpty( value ) ? defaultValueFactory() : value;
+      }
+
+      internal static Task LogProcessInvocationMessage( this IBuildEngine be, String process )
+         => be.LogMessageOrWriteToConsoleOut( $"Invoking process { process }." );
+
+      internal static Task LogProcessEndMessage( this IBuildEngine be, String process, DateTime startTime )
+         => be.LogMessageOrWriteToConsoleOut( $"Process { process } exited, duration { ( DateTime.UtcNow - startTime ).ToString( "c" ) }." );
+
+      internal static async Task LogMessageOrWriteToConsoleOut( this IBuildEngine be, String message )
+      {
+         if ( be == null )
+         {
+            await Console.Out.WriteLineAsync( message );
+         }
+         else
+         {
+            be.LogMessageEvent( new BuildMessageEventArgs(
+               message,
+               null,
+               null,
+               MessageImportance.Normal
+               ) );
+         }
       }
    }
 }
