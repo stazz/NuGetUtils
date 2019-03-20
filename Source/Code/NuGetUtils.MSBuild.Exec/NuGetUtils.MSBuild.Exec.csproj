@@ -57,7 +57,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>2.0.3</VersionPrefix>
+    <VersionPrefix>2.0.4</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>Contains task factory to execute methods from assemblies of NuGet packages.</Description>
@@ -68,7 +68,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Adding some diagnostic output for tracking and timing process invocations.</PackageReleaseNotes>
+    <PackageReleaseNotes>Cut down significantly the amount of process invocations for typical builds.</PackageReleaseNotes>
     <PackageTags>nuget utils msbuild exec</PackageTags>
     <Title>NuGetUtils: Package Executor MSBuild TaskFactory</Title>
 

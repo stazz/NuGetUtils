@@ -338,7 +338,7 @@ namespace NuGetUtils.Lib.Restore
                }
                else
                {
-                  this.NuGetLogger?.Log( LogLevel.Verbose, "Found restorable packages within disk cache." );
+                  this.NuGetLogger?.Log( LogLevel.Verbose, $"Found information about restorable packages within disk cache at \"{ lockFileCachePath }\"." );
                }
 
                this.SaveToInMemoryCache( serializedLockFile, key, retVal );
@@ -356,12 +356,12 @@ namespace NuGetUtils.Lib.Restore
                if ( lockFileCachePath != null && lockFilesDir != null )
                {
                   // Check if the disk cache has gone stale (e.g. someone manually deleted package from repo folder)
-                  var first = versionRanges.First();
                   var staled = versionRanges.Where( v => this.LocalRepositories.Values.All( lr => !Directory.Exists( Path.Combine( lr.RepositoryRoot, lr.PathResolver.GetPackageDirectory( v.Key, retVal.Targets[0].GetTargetLibrary( v.Key ).Version ) ) ) ) );
                   if ( staled.Any() )
                   {
                      // Have to re-restore
                      String ignored;
+                     this.NuGetLogger?.Log( LogLevel.Verbose, $"Detected the disk cache version of restorable packages at \"{ lockFileCachePath }\" to have been gone stale, re-restoring." );
                      (retVal, ignored) = await RestoreUsingNuGetAndWriteToDisk( lockFilesDir, lockFileCachePath );
                   }
                }

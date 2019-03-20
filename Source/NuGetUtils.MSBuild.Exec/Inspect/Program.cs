@@ -75,33 +75,27 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
       {
          var config = info.Configuration;
 
-         var methodOrNull = await config.FindMethodForExecutingWithinNuGetAssemblyAsync(
+         await WriteMethodInformationToFileAsync(
             token,
             restorer,
-            ( assemblyLoader, suitableMethod ) => Task.FromResult( suitableMethod ),
+            config.PackageID,
+            config.PackageVersion,
+            config.InspectFilePath,
+            await config.FindMethodForExecutingWithinNuGetAssemblyAsync(
+               token,
+               restorer,
+               ( assemblyLoader, theAssembly, suitableMethod ) => Task.FromResult( theAssembly ),
 #if NET46
-            null
+               null
 #else
-            sdkPackageID,
-            sdkPackageVersion
+               sdkPackageID,
+               sdkPackageVersion
 #endif
-            , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
+               , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
+            )
             );
 
-         var retVal = methodOrNull == null ?
-            -3 :
-            0;
-
-         if ( retVal == 0 )
-         {
-            await WriteMethodInformationToFileAsync( token, restorer, config.PackageID, config.PackageVersion, config.InspectFilePath, methodOrNull );
-         }
-         else
-         {
-            await Console.Error.WriteLineAsync( "Could not find suitable method to execute as entrypoint." );
-         }
-
-         return retVal;
+         return 0;
       }
 
       protected override String GetDocumentation()
@@ -115,7 +109,7 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
          String packageID,
          String packageVersion,
          String filePath,
-         MethodInfo method
+         Assembly assembly
          )
       {
          // Should be fast, since the lock file should already been cached by previous restore call via loadnugetassembly call
@@ -125,28 +119,41 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
             .Libraries
             .First( l => String.Equals( l.Name, packageID, StringComparison.CurrentCultureIgnoreCase ) )
             .Version;
-         var returnType = method.ReturnParameter.ParameterType;
+
          using ( var writer = filePath.OpenStreamWriter() )
          {
             await writer.WriteAsync( JsonConvert.SerializeObject( new PackageInspectionResult()
             {
                ExactPackageVersion = new VersionRange( minVersion: packageNuGetVersion, includeMinVersion: true, maxVersion: packageNuGetVersion, includeMaxVersion: true ).ToShortString(),
-               MethodToken = method.MetadataToken,
-               InputParameters = method.GetParameters()
-                  .Select( p => p.ParameterType )
-                  .Where( t => !NuGetExecutionUtils.SpecialTypesForMethodArguments.Contains( t ) )
-                  .SelectMany( t => t.GetRuntimeProperties() )
-                  .Distinct()
-                  .IncludeTaskProperties( false )
-                  .Select( p => p.CreatePropertyInfoObject() )
-                  .ToArray(),
-               OutputParameters = typeof( void ).Equals( returnType ) ?
-                  Empty<ExecutableParameterInfo>.Array :
-                  returnType
-                     .GetRuntimeProperties()
-                     .IncludeTaskProperties( true )
-                     .Select( p => p.CreatePropertyInfoObject() )
-                     .ToArray()
+               SuitableMethods = assembly
+                  .GetTypes()
+                  .SelectMany( t => t.GetTypeInfo().FindSuitableMethodsForNuGetExec( null ) )
+                  .Select( method =>
+                  {
+                     var returnType = method.ReturnParameter.ParameterType;
+                     return new MethodInspectionResult()
+                     {
+                        MethodToken = method.MetadataToken,
+                        MethodName = method.Name,
+                        TypeName = method.DeclaringType.FullName,
+                        InputParameters = method.GetParameters()
+                           .Select( p => p.ParameterType )
+                           .Where( t => t.IsEligibleInputOrOutputParameterType( true ) )
+                           .SelectMany( t => t.GetRuntimeProperties() )
+                           .Distinct()
+                           .IncludeTaskProperties( false )
+                           .Select( p => p.CreatePropertyInfoObject() )
+                           .ToArray(),
+                        OutputParameters = typeof( void ).Equals( returnType ) || !returnType.IsEligibleInputOrOutputParameterType( false ) ?
+                           Empty<ExecutableParameterInfo>.Array :
+                           returnType
+                              .GetRuntimeProperties()
+                              .IncludeTaskProperties( true )
+                              .Select( p => p.CreatePropertyInfoObject() )
+                              .ToArray()
+                     };
+                  } )
+                  .ToArray()
             } ) );
          }
 
@@ -155,6 +162,16 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
 
    internal static class NuGetUtilsExtensions
    {
+      private static ISet<Type> AdditionalPrimitiveTypes { get; } = new HashSet<Type>()
+      {
+         typeof(String),
+         typeof(Decimal),
+         typeof(DateTime),
+         typeof(DateTimeOffset),
+         typeof(TimeSpan),
+         typeof(Guid)
+      };
+
       public static IEnumerable<PropertyInfo> IncludeTaskProperties(
          this IEnumerable<PropertyInfo> properties,
          Boolean isOutput
@@ -176,6 +193,19 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
             TypeName = pType.FullName,
             IsEnum = pType.IsEnum
          };
+      }
+
+      public static Boolean IsEligibleInputOrOutputParameterType(
+         this Type type,
+         Boolean isInput
+         )
+      {
+         return
+            !type.IsPrimitive // Boolean, Byte, SByte, Int16, UInt16, Int32, UInt32, Int64, UInt64, IntPtr, UIntPtr, Char, Double, and Single
+            && !AdditionalPrimitiveTypes.Contains( type ) // Other "primitives"
+            && !typeof( Delegate ).IsAssignableFrom( type ) // No delegates
+            && ( !isInput || !NuGetExecutionUtils.SpecialTypesForMethodArguments.Contains( type ) ) // No 'special' types
+            ;
       }
    }
 }

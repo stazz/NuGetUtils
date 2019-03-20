@@ -188,25 +188,61 @@ namespace NuGetUtils.MSBuild.Exec
                         args.SettingsLocation,
                         env.PackageID,
                         env.PackageVersion,
-                        args.AssemblyPath,
-                        args.TypeName,
-                        args.MethodName
+                        args.AssemblyPath
                      ),
                      args.RestoreSDKPackage,
                      be,
                      token
                      );
+
+                  var epType = args.TypeName;
+                  var epMethod = args.MethodName;
+                  if ( epType.IsNullOrEmpty() && epMethod.IsNullOrEmpty() )
+                  {
+                     // TODO load the assembly using System.Reflection.Metadata stuff and inspect it.
+                     // OR just invoke the process which will use the existing stuff in NuGetUtils.Lib.Exec
+                     throw new NotImplementedException( "The scenario where both type and method names of entrypoint are not specified is not yet supported." );
+                  }
+
+
+                  Func<MethodInspectionInfo, Boolean> matcher;
+                  if ( epType.IsNullOrEmpty() )
+                  {
+                     // Get the first method matching given method name
+                     matcher = m => String.Equals( m.MethodName, epMethod );
+                  }
+                  else
+                  {
+                     if ( epMethod.IsNullOrEmpty() )
+                     {
+                        // Get the first method contained within given type
+                        matcher = m => String.Equals( m.TypeName, epType );
+                     }
+                     else
+                     {
+                        // Get the first method matching given method name which is contained by type with given type name
+                        matcher = m => String.Equals( m.MethodName, epMethod ) && String.Equals( m.TypeName, epType );
+                     }
+
+                  }
+
+                  var epInfo = inspection.SuitableMethods.FirstOrDefault( matcher );
+                  if ( epInfo == null )
+                  {
+                     throw new InvalidOperationException( $"Could not find suitable method with the following information: entrypoint type {epType}, and entrypoing method {epMethod}." );
+                  }
+
                   var typeGenResult = TaskTypeGenerator.Instance.GenerateTaskType(
                      true,
-                     inspection.InputParameters,
-                     inspection.OutputParameters
+                     epInfo.InputParameters,
+                     epInfo.OutputParameters
                      );
 
                   initializationResult = new InitializationResult(
                      typeGenResult,
                      () => (ITask) typeGenResult.GeneratedType.GetTypeInfo().DeclaredConstructors.First().Invoke( new[]
                      {
-                  new TaskProxy(_cache.ProcessMonitor, args, env, inspection, typeGenResult)
+                        new TaskProxy(_cache.ProcessMonitor, args, env, inspection, epInfo, typeGenResult)
                      } )
                      );
                }

@@ -1,5 +1,7 @@
 ﻿# NuGetUtils.MSBuild.Exec
 
+TODO the technical details of this documentation are outdated and need to be rewritten.
+
 This project contains task factory, which makes it easy to execute tasks which are in assemblies of NuGet packages, and potentially are dependant on some other NuGet packages.
 The task factory will take care of restoring all dependent packages before running the task, and loading all the assemblies of the dependant NuGet packages and any SDK assemblies as well, on-the-fly.
 Thus, using `CopyLocalLockFileAssemblies` property should no longer be necessary.

@@ -66,8 +66,6 @@ namespace NuGetUtils.MSBuild.Exec
             && String.Equals( x.PackageVersion, y.PackageVersion, StringComparison.CurrentCultureIgnoreCase )
             && String.Equals( x.SettingsLocation, y.SettingsLocation, StringComparison.CurrentCulture ) // No ignore case in settings location for case-sensitive file systems
             && String.Equals( x.AssemblyPath, y.AssemblyPath, StringComparison.CurrentCulture ) // No ignore case in settings location for case-sensitive file systems
-            && String.Equals( x.EntrypointTypeName, y.EntrypointTypeName, StringComparison.CurrentCulture ) // No ignore case because name of type
-            && String.Equals( x.EntrypointMethodName, y.EntrypointMethodName, StringComparison.CurrentCulture ) // No ignore case because name of method
             ),
             x => x?.PackageID?.ToLower()?.GetHashCode() ?? 0
             ) );
@@ -152,8 +150,6 @@ namespace NuGetUtils.MSBuild.Exec
                   PackageID = key.PackageID,
                   PackageVersion = key.PackageVersion,
                   AssemblyPath = key.AssemblyPath,
-                  EntrypointTypeName = key.EntrypointTypeName,
-                  EntrypointMethodName = key.EntrypointMethodName,
 
                   ShutdownSemaphoreName = NuGetUtilsExecProcessMonitor.CreateNewShutdownSemaphoreName(),
                   // ReturnValuePath is not used by Inspect program
@@ -277,9 +273,7 @@ namespace NuGetUtils.MSBuild.Exec
          String settingsLocation,
          String packageID,
          String packageVersion,
-         String assemblyPath,
-         String entrypointTypeName,
-         String entrypointMethodName
+         String assemblyPath
          )
       {
          this.NuGetFramework = ArgumentValidator.ValidateNotEmpty( nameof( nuGetFramework ), nuGetFramework );
@@ -287,8 +281,6 @@ namespace NuGetUtils.MSBuild.Exec
          this.PackageID = ArgumentValidator.ValidateNotEmpty( nameof( packageID ), packageID );
          this.PackageVersion = ArgumentValidator.ValidateNotEmpty( nameof( packageVersion ), packageVersion );
          this.AssemblyPath = assemblyPath.DefaultIfNullOrEmpty();
-         this.EntrypointTypeName = entrypointTypeName.DefaultIfNullOrEmpty();
-         this.EntrypointMethodName = entrypointMethodName.DefaultIfNullOrEmpty();
       }
 
       public String NuGetFramework { get; }
@@ -296,8 +288,6 @@ namespace NuGetUtils.MSBuild.Exec
       public String PackageID { get; }
       public String PackageVersion { get; }
       public String AssemblyPath { get; }
-      public String EntrypointTypeName { get; }
-      public String EntrypointMethodName { get; }
    }
 
    internal sealed class InspectionValue
@@ -306,20 +296,34 @@ namespace NuGetUtils.MSBuild.Exec
          PackageInspectionResult result
          )
       {
-         var methodToken = result.MethodToken;
-         if ( methodToken == 0 )
-         {
-            throw new ArgumentException( nameof( methodToken ) );
-         }
-
-         this.MethodToken = methodToken;
          this.ExactPackageVersion = ArgumentValidator.ValidateNotEmpty( nameof( PackageInspectionResult.ExactPackageVersion ), result.ExactPackageVersion );
+         this.SuitableMethods = result.SuitableMethods
+            .Where( m => m.MethodToken != 0 )
+            .Select( m => new MethodInspectionInfo( m ) )
+            .ToImmutableArray();
+      }
+
+      public String ExactPackageVersion { get; }
+      public ImmutableArray<MethodInspectionInfo> SuitableMethods { get; set; }
+   }
+
+   internal sealed class MethodInspectionInfo
+   {
+      public MethodInspectionInfo(
+         MethodInspectionResult result
+         )
+      {
+         var methodToken = result.MethodToken;
+         this.MethodToken = methodToken;
+         this.TypeName = ArgumentValidator.ValidateNotEmpty( nameof( result.TypeName ), result.TypeName );
+         this.MethodName = ArgumentValidator.ValidateNotEmpty( nameof( result.MethodName ), result.MethodName );
          this.InputParameters = result.InputParameters.Select( p => new InspectionExecutableParameterInfo( p ) ).ToImmutableArray();
          this.OutputParameters = result.OutputParameters.Select( p => new InspectionExecutableParameterInfo( p ) ).ToImmutableArray();
       }
 
       public Int32 MethodToken { get; }
-      public String ExactPackageVersion { get; }
+      public String TypeName { get; set; }
+      public String MethodName { get; set; }
       public ImmutableArray<InspectionExecutableParameterInfo> InputParameters { get; }
       public ImmutableArray<InspectionExecutableParameterInfo> OutputParameters { get; }
    }

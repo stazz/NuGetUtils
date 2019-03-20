@@ -147,49 +147,8 @@ namespace NuGetUtils.Lib.Exec
          TypeInfo type
          )
       {
-         IEnumerable<MethodInfo> suitableMethods;
-         var entryPointMethodName = this._entryPointMethodName;
-         if ( entryPointMethodName.IsNullOrEmpty() )
-         {
-            var props =
-#if NET46 || NETSTANDARD1_6
-               new HashSet<MethodInfo>(
-#endif
-               type.DeclaredProperties.SelectMany( this.GetPropertyMethods )
-#if NET46 || NETSTANDARD1_6
-               )
-#else
-               .ToHashSet()
-#endif
-               ;
-            suitableMethods = type.DeclaredMethods.Where( m => !props.Contains( m ) ); //.OrderBy( m => props.Contains( m ) ); // This will order in such way that false (not related to property) comes first
-         }
-         else
-         {
-            suitableMethods = type.DeclaredMethods.Where( m => String.Equals( m.Name, entryPointMethodName ) );
-         }
-
-         // MethodAttributes.PrivateScope is known as CompilerControlled in ECMA-335, so filter out those methods.
-         return suitableMethods
-            .Where( m => ( m.Attributes & MethodAttributes.MemberAccessMask ) != MethodAttributes.PrivateScope && m.IsStatic )
+         return type.FindSuitableMethodsForNuGetExec( this._entryPointMethodName )
             .DefaultIfMoreThan1();
-      }
-
-      private IEnumerable<MethodInfo> GetPropertyMethods(
-         PropertyInfo property
-         )
-      {
-         var method = property.GetMethod;
-         if ( method != null )
-         {
-            yield return method;
-         }
-
-         method = property.SetMethod;
-         if ( method != null )
-         {
-            yield return method;
-         }
       }
 
       //private Boolean HasSuitableSignature(
@@ -246,6 +205,76 @@ namespace NuGetUtils.Lib.Exec
             (MethodInfo) loadedAssembly.ManifestModule.ResolveMethod( methodToken.Value )
 #endif
             : new MethodSearcher( loadedAssembly, entrypointTypeName, entrypointMethodName ).GetSuitableMethod();
+      }
+
+      /// <summary>
+      /// This is helper method to find all suitable methods from a single type, used by <see cref="E_NuGetUtils.ExecuteMethodWithinNuGetAssemblyAsync" />.
+      /// </summary>
+      /// <param name="type">Thie type.</param>
+      /// <param name="entryPointMethodName">The specified entrypoint method name. If <c>null</c> or empty, then all property methods which are not part of properties nor events are included for search.</param>
+      /// <returns></returns>
+      public static IEnumerable<MethodInfo> FindSuitableMethodsForNuGetExec(
+         this TypeInfo type,
+         String entryPointMethodName
+         )
+      {
+         IEnumerable<MethodInfo> suitableMethods;
+         if ( entryPointMethodName.IsNullOrEmpty() )
+         {
+            var props =
+#if NET46 || NETSTANDARD1_6
+               new HashSet<MethodInfo>(
+#endif
+               type.DeclaredProperties.SelectMany( GetPropertyMethods ).Where( m => m != null )
+#if NET46 || NETSTANDARD1_6
+               )
+#else
+               .ToHashSet()
+#endif
+               ;
+            var evts =
+#if NET46 || NETSTANDARD1_6
+               new HashSet<MethodInfo>(
+#endif
+               type.DeclaredEvents.SelectMany( GetEventMethods ).Where( m => m != null )
+#if NET46 || NETSTANDARD1_6
+               )
+#else
+               .ToHashSet()
+#endif
+               ;
+            suitableMethods = type.DeclaredMethods.Where( m => !evts.Contains( m ) && !props.Contains( m ) ); //.OrderBy( m => props.Contains( m ) ); // This will order in such way that false (not related to property) comes first
+         }
+         else
+         {
+            suitableMethods = type.DeclaredMethods.Where( m => String.Equals( m.Name, entryPointMethodName ) );
+         }
+
+         // MethodAttributes.PrivateScope is known as CompilerControlled in ECMA-335, so filter out those methods.
+         return suitableMethods
+            .Where( m => ( m.Attributes & MethodAttributes.MemberAccessMask ) != MethodAttributes.PrivateScope && m.IsStatic );
+      }
+
+      private static IEnumerable<MethodInfo> GetPropertyMethods(
+         PropertyInfo property
+         )
+      {
+         yield return property.GetMethod;
+         yield return property.SetMethod;
+      }
+
+      private static IEnumerable<MethodInfo> GetEventMethods(
+         EventInfo evt
+         )
+      {
+         yield return evt.AddMethod;
+         yield return evt.RemoveMethod;
+#if !NETSTANDARD1_6
+         foreach ( var other in evt.GetOtherMethods( true ) )
+         {
+            yield return other;
+         }
+#endif
       }
    }
 
@@ -400,9 +429,9 @@ public static partial class E_NuGetUtils
       return configuration.PerformFindMethodForExecutingWithinNuGetAssemblyAsync(
          token,
          restorer,
-         async ( assemblyLoader, suitableMethod ) => suitableMethod == null ?
+         async ( assemblyLoader, assembly, suitableMethod ) => suitableMethod.Value == null ?
             new EitherOr<Object, NoExecutableMethodFound>( NoExecutableMethodFound.Instance ) :
-            new EitherOr<Object, NoExecutableMethodFound>( await assemblyLoader.ExecuteSpecificMethod( suitableMethod, token, additionalParameterTypeProvider ) ),
+            new EitherOr<Object, NoExecutableMethodFound>( await assemblyLoader.ExecuteSpecificMethod( suitableMethod.Value, token, additionalParameterTypeProvider ) ),
 #if NET46
             appDomainSetup
 #else
@@ -448,7 +477,7 @@ public static partial class E_NuGetUtils
       this NuGetExecutionConfiguration configuration,
       CancellationToken token,
       BoundRestoreCommandUser restorer,
-      Func<NuGetAssemblyResolver, MethodInfo, Task<TResult>> useMethod,
+      Func<NuGetAssemblyResolver, Assembly, Lazy<MethodInfo>, Task<TResult>> useMethod,
 #if NET46
       AppDomainSetup appDomainSetup
 #else
@@ -496,7 +525,7 @@ public static partial class E_NuGetUtils
       this NuGetExecutionConfiguration configuration,
       CancellationToken token,
       BoundRestoreCommandUser restorer,
-      Func<NuGetAssemblyResolver, MethodInfo, Task<TResult>> useMethod,
+      Func<NuGetAssemblyResolver, Assembly, Lazy<MethodInfo>, Task<TResult>> useMethod,
 #if NET46
       AppDomainSetup appDomainSetup
 #else
@@ -525,9 +554,9 @@ public static partial class E_NuGetUtils
       {
          var packageID = configuration.PackageID;
          var packageVersion = configuration.PackageVersion;
-
-         var assembly = ( await assemblyLoader.LoadNuGetAssembly( packageID, packageVersion, token, configuration.AssemblyPath ) ) ?? throw new ArgumentException( $"Could not find assembly {( configuration.AssemblyPath.IsNullOrEmpty() ? "" : ( "\"" + configuration.AssemblyPath + "\"" ) )} within package \"{packageID}\" at {( String.IsNullOrEmpty( packageVersion ) ? "latest version" : ( "version \"" + packageVersion + "\"" ) )} with path \"{configuration.AssemblyPath}\"." );
-         return await useMethod( assemblyLoader, configuration.FindSuitableMethod( assembly ) );
+         var assemblyPath = configuration.AssemblyPath;
+         var assembly = ( await assemblyLoader.LoadNuGetAssembly( packageID, packageVersion, token, assemblyPath ) ) ?? throw new ArgumentException( $"Could not find assembly {( assemblyPath.IsNullOrEmpty() ? "" : ( "\"" + assemblyPath + "\"" ) )} within package \"{packageID}\" at {( String.IsNullOrEmpty( packageVersion ) ? "latest version" : ( "version \"" + packageVersion + "\"" ) )} with path \"{assemblyPath}\"." );
+         return await useMethod( assemblyLoader, assembly, new Lazy<MethodInfo>( () => configuration.FindSuitableMethod( assembly ), LazyThreadSafetyMode.ExecutionAndPublication ) );
       }
    }
 

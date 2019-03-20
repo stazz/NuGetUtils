@@ -40,6 +40,7 @@ namespace NuGetUtils.MSBuild.Exec
       private readonly InitializationArgs _initializationArgs;
       private readonly EnvironmentValue _environment;
       private readonly InspectionValue _entrypoint;
+      private readonly MethodInspectionInfo _entrypointMethod;
 
       private readonly CancellationTokenSource _cancellationTokenSource;
       private readonly NuGetUtilsExecProcessMonitor _processMonitor;
@@ -49,6 +50,7 @@ namespace NuGetUtils.MSBuild.Exec
          InitializationArgs initializationArgs,
          EnvironmentValue environment,
          InspectionValue entrypoint,
+         MethodInspectionInfo entrypointMethod,
          TypeGenerationResult generationResult
          )
       {
@@ -56,6 +58,7 @@ namespace NuGetUtils.MSBuild.Exec
          this._initializationArgs = ArgumentValidator.ValidateNotNull( nameof( initializationArgs ), initializationArgs );
          this._environment = ArgumentValidator.ValidateNotNull( nameof( environment ), environment );
          this._entrypoint = ArgumentValidator.ValidateNotNull( nameof( entrypoint ), entrypoint );
+         this._entrypointMethod = ArgumentValidator.ValidateNotNull( nameof( entrypointMethod ), entrypointMethod );
          this._propertyInfos = generationResult
             .Properties
             .ToImmutableDictionary( p => p.Name, p => new TaskPropertyHolder( p.Output, !Equals( p.PropertyType, typeof( String ) ) ) );
@@ -118,7 +121,7 @@ namespace NuGetUtils.MSBuild.Exec
                   SDKFrameworkPackageVersion = this._environment.SDKPackageVersion,
                   PackageID = this._environment.PackageID,
                   PackageVersion = this._entrypoint.ExactPackageVersion,
-                  MethodToken = this._entrypoint.MethodToken,
+                  MethodToken = this._entrypointMethod.MethodToken,
                   AssemblyPath = this._initializationArgs.AssemblyPath,
 
                   ShutdownSemaphoreName = NuGetUtilsExecProcessMonitor.CreateNewShutdownSemaphoreName(),
