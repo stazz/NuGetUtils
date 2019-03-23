@@ -15,97 +15,104 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
-using Microsoft.Build.Framework;
 using NuGet.Common;
+using NuGetUtils.Lib.Common;
 using NuGetUtils.Lib.Deployment;
-using NuGetUtils.Lib.MSBuild;
 using NuGetUtils.Lib.Restore;
 using NuGetUtils.Lib.Restore.Agnostic;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using UtilPack;
 
 namespace NuGetUtils.MSBuild.Deployment
 {
-   public class DeployNuGetPackageTask : Microsoft.Build.Utilities.Task, NuGetDeploymentConfiguration, NuGetUsageConfiguration<LogLevel>, ICancelableTask
+   public static class DeployNuGetPackageTask
    {
-      private readonly CancellationTokenSource _cancelTokenSource;
-
-      public DeployNuGetPackageTask()
+      public static async Task<Output> Execute(
+         Input input,
+         CancellationToken token
+         )
       {
-         this._cancelTokenSource = new CancellationTokenSource();
+         Output output = null;
+         if ( !String.IsNullOrEmpty( input.PackageID ) )
+         {
+            (var epAssembly, var targetFW) = await input.CreateAndUseRestorerAsync(
+               typeof( DeployNuGetPackageTask ),
+               input.LockFileCacheDirEnvName,
+               input.LockFileCacheDirWithinHomeDir,
+               restorer => input.DeployAsync( restorer.Restorer, token, restorer.SDKPackageID, restorer.SDKPackageVersion ),
+               () => new TextWriterLogger()
+               {
+                  VerbosityLevel = input.LogLevel
+               }
+               );
+
+            if ( !String.IsNullOrEmpty( epAssembly )
+               && File.Exists( epAssembly ) )
+            {
+               output = new Output( epAssembly );
+            }
+         }
+         else
+         {
+            await Console.Error.WriteLineAsync( $"Please specify at least {nameof( input.PackageID )} input property." );
+         }
+         return output ?? new Output( null );
       }
 
-      public override Boolean Execute()
+
+
+      public sealed class Input : NuGetDeploymentConfiguration, NuGetUsageConfiguration<LogLevel>
       {
-         String epAssembly;
-         using ( new UsingHelper( () => this._cancelTokenSource.DisposeSafely() ) )
+         public String NuGetConfigurationFile { get; set; }
+
+         public String RestoreFramework { get; set; }
+
+         public String RestoreRuntimeID { get; set; }
+
+         public String LockFileCacheDirectory { get; set; }
+
+         public String SDKFrameworkPackageID { get; set; }
+
+         public String SDKFrameworkPackageVersion { get; set; }
+
+         public Boolean DisableLockFileCache { get; set; }
+
+         public LogLevel LogLevel { get; set; }
+
+         public Boolean DisableLogging { get; set; }
+
+         public String PackageID { get; set; }
+
+         public String PackageVersion { get; set; }
+
+         public String AssemblyPath { get; set; }
+
+         public String PackageSDKFrameworkPackageID { get; set; }
+
+         public String PackageSDKFrameworkPackageVersion { get; set; }
+
+         public DeploymentKind DeploymentKind { get; set; }
+
+         public Boolean? PackageFrameworkIsPackageBased { get; set; }
+
+         public String TargetDirectory { get; set; }
+
+         public String LockFileCacheDirEnvName { get; set; }
+         public String LockFileCacheDirWithinHomeDir { get; set; }
+      }
+
+      public sealed class Output
+      {
+         public Output( String epAssemblyPath )
          {
-            epAssembly = this.CreateAndUseRestorerAsync(
-               this.GetType(),
-               this.LockFileCacheDirEnvName,
-               this.LockFileCacheDirWithinHomeDir,
-               restorer => this.DeployAsync( restorer.Restorer, this._cancelTokenSource.Token, restorer.SDKPackageID, restorer.SDKPackageVersion ),
-               () => new NuGetMSBuildLogger( "NDE001", "NDE002", this.GetType().FullName, null, this.BuildEngine )
-               ).GetAwaiter().GetResult().EntryPointAssemblyPath;
+            this.EntryPointAssemblyPath = epAssemblyPath;
          }
 
-         var success = !this.Log.HasLoggedErrors
-            && !String.IsNullOrEmpty( epAssembly )
-            && File.Exists( epAssembly );
-         if ( success )
-         {
-            this.EntryPointAssemblyPath = Path.GetFullPath( epAssembly );
-         }
-         return success;
+         public String EntryPointAssemblyPath { get; }
       }
-
-      public void Cancel()
-      {
-         this._cancelTokenSource.Cancel();
-      }
-
-      [Output]
-      public String EntryPointAssemblyPath { get; set; }
-
-      public String NuGetConfigurationFile { get; set; }
-
-      public String RestoreFramework { get; set; }
-
-      public String RestoreRuntimeID { get; set; }
-
-      public String LockFileCacheDirectory { get; set; }
-
-      public String SDKFrameworkPackageID { get; set; }
-
-      public String SDKFrameworkPackageVersion { get; set; }
-
-      public Boolean DisableLockFileCache { get; set; }
-
-      public LogLevel LogLevel { get; set; }
-
-      public Boolean DisableLogging { get; set; }
-
-      [Required]
-      public String PackageID { get; set; }
-
-      public String PackageVersion { get; set; }
-
-      public String AssemblyPath { get; set; }
-
-      public String PackageSDKFrameworkPackageID { get; set; }
-
-      public String PackageSDKFrameworkPackageVersion { get; set; }
-
-      public DeploymentKind DeploymentKind { get; set; }
-
-      public Boolean? PackageFrameworkIsPackageBased { get; set; }
-
-      public String TargetDirectory { get; set; }
-
-      public String LockFileCacheDirEnvName { get; set; }
-      public String LockFileCacheDirWithinHomeDir { get; set; }
    }
 }

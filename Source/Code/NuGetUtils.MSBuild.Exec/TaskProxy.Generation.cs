@@ -268,28 +268,33 @@ namespace NuGetUtils.MSBuild.Exec
          }
 
          // We are ready
-         return new TypeGenerationResult( tb.
+         return new TypeGenerationResult(
+            properties.Select( p => (p.p.TypeName, p.Item2) ).ToImmutableArray(),
+            tb.
 #if NET46
             CreateType()
 #else
             CreateTypeInfo().AsType()
 #endif
-            , properties.Select( p => p.Item2 ) );
+            );
       }
    }
 
    internal sealed class TypeGenerationResult
    {
       public TypeGenerationResult(
-         Type generatedType,
-         IEnumerable<TaskPropertyInfo> properties
+         ImmutableArray<(String PropertyTypeName, TaskPropertyInfo PropertyInfo)> propertyInfos,
+         Type generatedType
          )
       {
          this.GeneratedType = ArgumentValidator.ValidateNotNull( nameof( generatedType ), generatedType );
-         this.Properties = properties.ToArray();
+         this.PropertyTypeNames = propertyInfos.Select( t => t.PropertyTypeName ).ToImmutableArray();
+         this.Properties = propertyInfos.Select( t => t.PropertyInfo ).ToArray();
       }
 
       public Type GeneratedType { get; }
+
+      public ImmutableArray<String> PropertyTypeNames { get; }
 
       public TaskPropertyInfo[] Properties { get; } // Not ImmutableArray since the return type of ITaskFactory.GetTaskParameters is just simple array
    }

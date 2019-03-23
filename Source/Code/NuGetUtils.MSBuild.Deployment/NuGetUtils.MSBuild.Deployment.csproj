@@ -12,11 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.1012" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\NuGetUtils.Lib.MSBuild\NuGetUtils.Lib.MSBuild.csproj" />
     <ProjectReference Include="..\NuGetUtils.Lib.Deployment\NuGetUtils.Lib.Deployment.csproj" />
   </ItemGroup>
 

@@ -25,6 +25,7 @@ namespace NuGetUtils.MSBuild.Exec.Common
    public class PerformConfiguration<TLogLevel> : DefaultNuGetExecutionConfiguration<TLogLevel>
    {
       public String InputProperties { get; set; }
+      public String ProjectFilePath { get; set; }
    }
 }
 
