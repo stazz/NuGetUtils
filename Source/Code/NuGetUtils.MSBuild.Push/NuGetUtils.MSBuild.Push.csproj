@@ -4,6 +4,10 @@
     <TargetFrameworks>netstandard1.6;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\NuGetUtils.Lib.Common\NuGetUtils.Lib.Common.csproj" />
   </ItemGroup>
