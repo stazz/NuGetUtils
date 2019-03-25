@@ -1,18 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
    <PropertyGroup>
-     <!-- https://github.com/NuGet/Home/issues/7414 (originally https://github.com/dotnet/sdk/issues/2523 )
-     Because of that GitHub issue, the compilation won't work when 'netcoreapp1.1' is just added here (because we simultaneously use netcoreapp2.x, otherwise it'd work). 
-     Furthermore, the resolution for that issue is 'wontfix', because netcoreapp1.x is no longer officially supported.
-     So, when we build this for netcoreapp1.1, we must explicitly specify the framework
-     -->
-      <TargetFrameworks>netstandard1.6;net46;netcoreapp2.1</TargetFrameworks>
-   </PropertyGroup>
-
-   <PropertyGroup>
-      <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-      <TreatSpecificWarningsAsErrors />
-      <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-      <LangVersion>latest</LangVersion>
+      <TargetFrameworks>netstandard1.6;net46;netstandard2.0;netcoreapp2.1</TargetFrameworks>
    </PropertyGroup>
 
    <ItemGroup>

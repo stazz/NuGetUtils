@@ -222,22 +222,22 @@ namespace NuGetUtils.Lib.Exec
          if ( entryPointMethodName.IsNullOrEmpty() )
          {
             var props =
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                new HashSet<MethodInfo>(
 #endif
                type.DeclaredProperties.SelectMany( GetPropertyMethods ).Where( m => m != null )
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                )
 #else
                .ToHashSet()
 #endif
                ;
             var evts =
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                new HashSet<MethodInfo>(
 #endif
                type.DeclaredEvents.SelectMany( GetEventMethods ).Where( m => m != null )
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                )
 #else
                .ToHashSet()

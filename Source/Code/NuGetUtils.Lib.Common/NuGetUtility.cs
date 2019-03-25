@@ -60,12 +60,6 @@ namespace NuGetUtils.Lib.Common
       /// </summary>
       public const String RID_OSX = "osx";
 
-#if NUGET_430
-      private static readonly NuGetFramework NETCOREAPP20 = new NuGetFramework( FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version( 2, 0, 0, 0 ) );
-#endif
-#if NUGET_430 || NUGET_440 || NUGET_450
-      private static readonly NuGetFramework NETCOREAPP21 = new NuGetFramework( FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version( 2, 1, 0, 0 ) );
-#endif
       private static readonly NuGetFramework NETCOREAPP22 = new NuGetFramework( FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version( 2, 2, 0, 0 ) );
 
       /// <summary>
@@ -383,23 +377,11 @@ namespace NuGetUtils.Lib.Common
                            retVal = FrameworkConstants.CommonFrameworks.NetCoreApp11;
                            break;
                         case 00001:
-                           retVal =
-#if NUGET_430
-                           NETCOREAPP20
-#else
-                           FrameworkConstants.CommonFrameworks.NetCoreApp20
-#endif
-                           ;
+                           retVal = FrameworkConstants.CommonFrameworks.NetCoreApp20;
                            break;
                         case 26614:
                         case 26919:
-                           retVal =
-#if !NUGET_430 && !NUGET_440 && !NUGET_450
-                              FrameworkConstants.CommonFrameworks.NetCoreApp21
-#else
-                              NETCOREAPP21
-#endif
-                              ;
+                           retVal = FrameworkConstants.CommonFrameworks.NetCoreApp21;
                            break;
                         default:
                            retVal = NETCOREAPP22;

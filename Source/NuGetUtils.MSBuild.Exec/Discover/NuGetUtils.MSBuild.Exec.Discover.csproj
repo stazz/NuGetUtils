@@ -5,14 +5,6 @@
     <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-
   <ItemGroup>
     <ProjectReference Include="..\Common\NuGetUtils.MSBuild.Exec.Common.csproj" />
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj" />

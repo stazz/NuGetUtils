@@ -4,13 +4,6 @@
     <TargetFrameworks>netstandard1.6;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\NuGetUtils.Lib.Common\NuGetUtils.Lib.Common.csproj" />
   </ItemGroup>

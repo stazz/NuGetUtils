@@ -4,13 +4,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
   <PropertyGroup>

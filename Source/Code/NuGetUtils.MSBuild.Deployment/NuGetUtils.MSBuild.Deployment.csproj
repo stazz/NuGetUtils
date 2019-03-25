@@ -5,9 +5,6 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 

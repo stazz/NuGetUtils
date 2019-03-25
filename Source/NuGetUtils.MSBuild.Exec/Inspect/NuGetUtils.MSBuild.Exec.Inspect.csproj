@@ -5,14 +5,6 @@
     <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-
   <ItemGroup>
     <ProjectReference Include="..\Common.NuGetDependant\NuGetUtils.MSBuild.Exec.Common.NuGetDependant.csproj" />
     <ProjectReference Include="..\..\Code\NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj" />
@@ -22,7 +14,6 @@
   <PropertyGroup>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
-
 
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
