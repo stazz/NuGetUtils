@@ -75,25 +75,31 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
       {
          var config = info.Configuration;
 
-         await WriteMethodInformationToFileAsync(
+         // Call WriteMethodInformationToFileAsync *inside* lambda, *before* the assembly loade is disposed.
+         await config.FindMethodForExecutingWithinNuGetAssemblyAsync(
             token,
             restorer,
-            config.PackageID,
-            config.PackageVersion,
-            config.InspectFilePath,
-            await config.FindMethodForExecutingWithinNuGetAssemblyAsync(
-               token,
-               restorer,
-               ( assemblyLoader, theAssembly, suitableMethod ) => Task.FromResult( theAssembly ),
+            async ( assemblyLoader, theAssembly, suitableMethod ) =>
+            {
+               await WriteMethodInformationToFileAsync(
+                     token,
+                     restorer,
+                     config.PackageID,
+                     config.PackageVersion,
+                     config.InspectFilePath,
+                     theAssembly
+                  );
+
+               return (Object) null;
+            },
 #if NET46
-               null
+            null
 #else
-               sdkPackageID,
-               sdkPackageVersion
+            sdkPackageID,
+            sdkPackageVersion
 #endif
-               , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
-            )
-            );
+            , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
+         );
 
          return 0;
       }
