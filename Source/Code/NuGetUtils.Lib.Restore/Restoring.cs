@@ -15,19 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+using Newtonsoft.Json.Linq;
 using NuGet.Commands;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
+using NuGet.Packaging;
 using NuGet.Packaging.Core;
+using NuGet.Packaging.Signing;
 using NuGet.ProjectModel;
+using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Repositories;
+using NuGet.RuntimeModel;
 using NuGet.Versioning;
+using NuGetUtils.Lib.Common;
+using NuGetUtils.Lib.Restore;
+using NuGetUtils.Lib.Restore.Agnostic;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -35,29 +44,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
-using NuGet.RuntimeModel;
-using NuGet.Packaging;
-using NuGet.Protocol;
-using Newtonsoft.Json.Linq;
-using System.Collections.Immutable;
-using NuGetUtils.Lib.Restore;
-using NuGetUtils.Lib.Common;
-
-
-#if !NUGET_430
-using TLocalNuspecCache = NuGet.Protocol.
-#if NUGET_440 || NUGET_450
-         LocalNuspecCache
-#else
-LocalPackageFileCache
-#endif
-         ;
-using NuGetUtils.Lib.Restore.Agnostic;
-#endif
-
-#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
-using NuGet.Packaging.Signing;
-#endif
 
 
 
@@ -128,9 +114,7 @@ namespace NuGetUtils.Lib.Restore
       private readonly Boolean _disposeSourceCacheContext;
       private readonly LockFileFormat _lockFileFormat;
       private readonly ConcurrentDictionary<ImmutableSortedSet<String>, ImmutableDictionary<ImmutableArray<NuGetVersion>, String>> _allLockFiles;
-#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
       private readonly ClientPolicyContext _clientPolicyContext;
-#endif
 
       /// <summary>
       /// Creates new instance of <see cref="BoundRestoreCommandUser"/> with given parameters.
@@ -141,7 +125,7 @@ namespace NuGetUtils.Lib.Restore
       /// <param name="runtimeGraph">Optional value indicating runtime graph information: either <see cref="global::NuGet.RuntimeModel.RuntimeGraph"/> directly, or <see cref="String"/> containing package ID of package holding <c>runtime.json</c> file, containing serialized runtime graph definition. If neither is specified, then <c>"Microsoft.NETCore.Platforms"</c> package ID used to locate <c>runtime.json</c> file, as per <see href="https://docs.microsoft.com/en-us/dotnet/core/rid-catalog">official documentation</see>.</param>
       /// <param name="nugetLogger">The logger to use in restore command.</param>
       /// <param name="sourceCacheContext">The optional <see cref="SourceCacheContext"/> to use.</param>
-      /// <param name="nuspecCache">The optional <see cref="TLocalNuspecCache"/> to use.</param>
+      /// <param name="nuspecCache">The optional <see cref="LocalPackageFileCache"/> to use.</param>
       /// <param name="clientPolicyContext">The optional <see cref="ClientPolicyContext"/> to use.</param>
       /// <param name="leaveSourceCacheOpen">Whether to leave the <paramref name="sourceCacheContext"/> open when disposing this <see cref="BoundRestoreCommandUser"/>.</param>
       /// <param name="lockFileCacheDir">The directory where to store serialized lock files returned by <see cref="RestoreIfNeeded"/>. If <c>null</c> or empty, then <paramref name="lockFileCacheEnvironmentVariableName"/> will be used. Set <paramref name="disableLockFileCacheDir"/> to true to disable caching lock files to file system.</param>
@@ -156,12 +140,8 @@ namespace NuGetUtils.Lib.Restore
          EitherOr<RuntimeGraph, String> runtimeGraph = default,
          ILogger nugetLogger = null,
          SourceCacheContext sourceCacheContext = null,
-#if !NUGET_430
-         TLocalNuspecCache nuspecCache = null,
-#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
+         LocalPackageFileCache nuspecCache = null,
          ClientPolicyContext clientPolicyContext = null,
-#endif
-#endif
          Boolean leaveSourceCacheOpen = false,
          String lockFileCacheDir = null,
          String lockFileCacheEnvironmentVariableName = DEFAULT_LOCK_FILE_CACHE_DIR_ENV_NAME,
@@ -195,9 +175,7 @@ namespace NuGetUtils.Lib.Restore
             fallbacks,
             new PackageSourceProvider( nugetSettings ).LoadPackageSources().Where( s => s.IsEnabled ).Select( s => csp.CreateRepository( s ) ),
             ctx,
-#if !NUGET_430
-            nuspecCache ?? new TLocalNuspecCache(),
-#endif
+            nuspecCache ?? new LocalPackageFileCache(),
             nugetLogger
             );
          this._nugetRestoreRootDir = Path.Combine( Path.GetTempPath(), Path.GetRandomFileName() );
@@ -246,9 +224,7 @@ namespace NuGetUtils.Lib.Restore
          }
          this._allLockFiles = new ConcurrentDictionary<ImmutableSortedSet<String>, ImmutableDictionary<ImmutableArray<NuGetVersion>, String>>();
          this._lockFileFormat = new LockFileFormat();
-#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
          this._clientPolicyContext = clientPolicyContext ?? ClientPolicyContext.GetClientPolicy( nugetSettings, nugetLogger );
-#endif
       }
 
       /// <summary>
@@ -387,9 +363,7 @@ namespace NuGetUtils.Lib.Restore
             this.CreatePackageSpec( targets ),
             this._restoreCommandProvider,
             this._cacheContext,
-#if !NUGET_430 && !NUGET_440 && !NUGET_450 && !NUGET_460 && !NUGET_470 && !NUGET_480
             this._clientPolicyContext,
-#endif
             this.NuGetLogger
             )
          {

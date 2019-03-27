@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
-using Microsoft.Build.Framework;
 using NuGet.Commands;
 using NuGet.Configuration;
 using NuGet.Packaging;
@@ -24,7 +23,6 @@ using NuGet.Packaging.Signing;
 using NuGet.Protocol.Core.Types;
 using NuGet.Repositories;
 using NuGetUtils.Lib.Common;
-using NuGetUtils.Lib.MSBuild;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,98 +35,94 @@ using UtilPack;
 
 namespace NuGetUtils.MSBuild.Push
 {
-   public class PushTask : Microsoft.Build.Utilities.Task, ICancelableTask
+   public static class PushTask
    {
-      private readonly CancellationTokenSource _cancelSource;
-
-      public PushTask()
+      public static async Task Execute(
+         Input input,
+         Func<String> projectFileGetter,
+         CancellationToken token
+         )
       {
-         this._cancelSource = new CancellationTokenSource();
-      }
-
-      public void Cancel()
-      {
-         this._cancelSource.Cancel( false );
-      }
-
-      public override Boolean Execute()
-      {
-         var sourceNames = this.SourceNames;
-         if ( !sourceNames.IsNullOrEmpty() )
+         var packageFilePath = input.PackageFilePath;
+         if ( !packageFilePath.IsNullOrEmpty() )
          {
-            var settings = NuGetUtility.GetNuGetSettingsWithDefaultRootDirectory(
-               Path.GetDirectoryName( this.BuildEngine.ProjectFileOfTaskNode ),
-               this.NuGetConfigurationFilePath );
-            var psp = new PackageSourceProvider( settings );
-            var packagePath = Path.GetFullPath( this.PackageFilePath );
-
-            var identity = new AsyncLazy<PackageIdentity>( async () =>
+            var sourceNames = input.SourceNames;
+            if ( !sourceNames.IsNullOrEmpty() )
             {
-               using ( var reader = new PackageArchiveReader( packagePath ) )
-               {
-                  return await reader.GetIdentityAsync( this._cancelSource.Token );
-               }
-            } );
-            var allRepositories = new Lazy<NuGetv3LocalRepository[]>( () =>
-               SettingsUtility.GetGlobalPackagesFolder( settings )
-                  .Singleton()
-                  .Concat( SettingsUtility.GetFallbackPackageFolders( settings ) )
-                  .Select( repoPath => new NuGetv3LocalRepository( repoPath ) )
-                  .ToArray()
-               );
-            var logger = new NuGetMSBuildLogger(
-               "NP0001",
-               "NP0002",
-               nameof( PushTask ),
-               nameof( PushTask ),
-               this.BuildEngine
-               );
+               var settings = NuGetUtility.GetNuGetSettingsWithDefaultRootDirectory(
+                  Path.GetDirectoryName( projectFileGetter() ),
+                  input.NuGetConfigurationFilePath );
+               var psp = new PackageSourceProvider( settings );
+               var packagePath = Path.GetFullPath( packageFilePath );
 
-            // MSBuild tasks are synchronous, so use WaitAll
-            // TODO call yield?
-            Task.WaitAll( sourceNames.Select( sourceItem => this.PerformPushToSingleSourceAsync(
-                 settings,
-                 packagePath,
-                 psp,
-                 identity,
-                 allRepositories,
-                 logger,
-                 sourceItem
-                 ) )
-                 .ToArray()
-               );
+               var identity = new AsyncLazy<PackageIdentity>( async () =>
+               {
+                  using ( var reader = new PackageArchiveReader( packagePath ) )
+                  {
+                     return await reader.GetIdentityAsync( token );
+                  }
+               } );
+               var allRepositories = new Lazy<NuGetv3LocalRepository[]>( () =>
+                  SettingsUtility.GetGlobalPackagesFolder( settings )
+                     .Singleton()
+                     .Concat( SettingsUtility.GetFallbackPackageFolders( settings ) )
+                     .Select( repoPath => new NuGetv3LocalRepository( repoPath ) )
+                     .ToArray()
+                  );
+
+               await Task.WhenAll( sourceNames.Select( sourceItem => PerformPushToSingleSourceAsync(
+                    settings,
+                    packagePath,
+                    psp,
+                    identity,
+                    allRepositories,
+                    new TextWriterLogger()
+                    {
+                       VerbosityLevel = input.LogLevel
+                    },
+                    sourceItem,
+                    input.RetryTimeoutForDirectoryDeletionFail,
+                    token
+                    ) )
+                    .ToArray()
+                  );
+            }
+            else
+            {
+               await Console.Error.WriteLineAsync( $"No sources specified for push command, please specify at least one source via \"{nameof( input.SourceNames )}\" property." );
+            }
          }
          else
          {
-            this.Log.LogWarning( $"No sources specified for push command, please specify at least one source via \"{nameof( this.SourceNames )}\" property." );
+            await Console.Error.WriteLineAsync( $"No package file path specified for push command, please specify it via \"{nameof( input.PackageFilePath )}\" property." );
          }
-
-         return true;
       }
 
-      private async Task PerformPushToSingleSourceAsync(
+      private static async Task PerformPushToSingleSourceAsync(
          ISettings settings,
          String packagePath,
          PackageSourceProvider psp,
          AsyncLazy<PackageIdentity> identity,
          Lazy<NuGetv3LocalRepository[]> allRepositories,
          NuGet.Common.ILogger logger,
-         ITaskItem sourceItem
+         PushSourceInfo sourceItem,
+         Int32 retryTimeoutForDirectoryDeletionFail,
+         CancellationToken token
          )
       {
-         var skipOverwrite = sourceItem.GetMetadata( "SkipOverwriteLocalFeed" ).ParseAsBooleanSafe();
-         var skipClearRepositories = sourceItem.GetMetadata( "SkipClearingLocalRepositories" ).ParseAsBooleanSafe();
-         var skipOfflineFeedOptimization = sourceItem.GetMetadata( "SkipOfflineFeedOptimization" ).ParseAsBooleanSafe();
-         var apiKey = sourceItem.GetMetadata( "ApiKey" );
-         var symbolSource = sourceItem.GetMetadata( "SymbolSource" );
-         var symbolApiKey = sourceItem.GetMetadata( "SymbolApiKey" );
-         var noServiceEndPoint = sourceItem.GetMetadata( "NoServiceEndPoint" ).ParseAsBooleanSafe();
+         var skipOverwrite = sourceItem.SkipOverwriteLocalFeed.ParseAsBooleanSafe();
+         var skipClearRepositories = sourceItem.SkipClearingLocalRepositories.ParseAsBooleanSafe();
+         var skipOfflineFeedOptimization = sourceItem.SkipOfflineFeedOptimization.ParseAsBooleanSafe();
+         var apiKey = sourceItem.ApiKey;
+         var symbolSource = sourceItem.SymbolSource;
+         var symbolApiKey = sourceItem.SymbolApiKey;
+         var noServiceEndPoint = sourceItem.NoServiceEndPoint.ParseAsBooleanSafe();
 
          var source = sourceItem.ItemSpec;
          var isLocal = IsLocalFeed( psp, source, out var localPath );
          if ( isLocal && !skipOverwrite )
          {
-            await this.DeleteDirAsync( OfflineFeedUtility.GetPackageDirectory( await identity, localPath ) );
+            await DeleteDirAsync( retryTimeoutForDirectoryDeletionFail, OfflineFeedUtility.GetPackageDirectory( await identity, localPath ), token );
          }
 
          if ( isLocal && !skipOfflineFeedOptimization )
@@ -149,12 +143,12 @@ namespace NuGetUtils.MSBuild.Push
                      logger
                      )
                   ),
-               this._cancelSource.Token
+               token
                );
          }
          else
          {
-            var timeoutString = sourceItem.GetMetadata( "PushTimeout" );
+            var timeoutString = sourceItem.PushTimeout;
             if ( String.IsNullOrEmpty( timeoutString ) || !Int32.TryParse( timeoutString, out var timeout ) )
             {
                timeout = 1000;
@@ -181,7 +175,7 @@ namespace NuGetUtils.MSBuild.Push
                ( e.Message.Contains( "already exists. The server is configured to not allow overwriting packages that already exist." ) )
             {
                // Nuget.Server returns this message when attempting to overwrite a package.
-               this.Log.LogMessage( $"Package already exists on source {source}, not updated." );
+               await Console.Out.WriteLineAsync( $"Package already exists on source {source}, not updated." );
             }
          }
 
@@ -190,21 +184,16 @@ namespace NuGetUtils.MSBuild.Push
             var id = await identity;
             foreach ( var repo in allRepositories.Value )
             {
-               await this.DeleteDirAsync( repo.PathResolver.GetInstallPath( id.Id, id.Version ) );
+               await DeleteDirAsync( retryTimeoutForDirectoryDeletionFail, repo.PathResolver.GetInstallPath( id.Id, id.Version ), token );
             }
          }
       }
 
-      [Required]
-      public String PackageFilePath { get; set; }
-
-      public ITaskItem[] SourceNames { get; set; }
-
-      public String NuGetConfigurationFilePath { get; set; }
-
-      public Int32 RetryTimeoutForDirectoryDeletionFail { get; set; } = 500;
-
-      private async Task DeleteDirAsync( String dir )
+      private static async Task DeleteDirAsync(
+         Int32 retryTimeout,
+         String dir,
+         CancellationToken token
+         )
       {
          if ( Directory.Exists( dir ) )
          {
@@ -222,10 +211,9 @@ namespace NuGetUtils.MSBuild.Push
 
             if ( error != null )
             {
-               var retryTimeout = this.RetryTimeoutForDirectoryDeletionFail;
                if ( retryTimeout > 0 )
                {
-                  await Task.Delay( retryTimeout, this._cancelSource.Token );
+                  await Task.Delay( retryTimeout, token );
 
                   try
                   {
@@ -241,7 +229,7 @@ namespace NuGetUtils.MSBuild.Push
 
                if ( error != null )
                {
-                  this.Log.LogWarning( $"Failed to delete directory {dir}: {error.Message}." );
+                  await Console.Out.WriteLineAsync( $"Failed to delete directory {dir}: {error.Message}." );
                }
             }
          }
@@ -268,6 +256,33 @@ namespace NuGetUtils.MSBuild.Push
          }
 
          return path != null;
+      }
+
+      public sealed class Input
+      {
+         public String PackageFilePath { get; set; }
+
+         public PushSourceInfo[] SourceNames { get; set; }
+
+         public NuGet.Common.LogLevel LogLevel { get; set; }
+
+         public String NuGetConfigurationFilePath { get; set; }
+
+         public Int32 RetryTimeoutForDirectoryDeletionFail { get; set; } = 500;
+      }
+
+      public sealed class PushSourceInfo
+      {
+         public String ItemSpec { get; set; }
+
+         public String SkipOverwriteLocalFeed { get; set; } // Is really boolean
+         public String SkipClearingLocalRepositories { get; set; } // Is really boolean
+         public String SkipOfflineFeedOptimization { get; set; } // Is really boolean
+         public String ApiKey { get; set; }
+         public String SymbolSource { get; set; }
+         public String SymbolApiKey { get; set; }
+         public String NoServiceEndPoint { get; set; } // Is really boolean
+         public String PushTimeout { get; set; } // Is really Int32
       }
    }
 }

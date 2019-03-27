@@ -15,8 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.EntryPoint",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Exec", "Code\NuGetUtils.Lib.Exec\NuGetUtils.Lib.Exec.csproj", "{DB07C26E-4E9C-4AA0-8689-FA1B76070A27}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.MSBuild", "Code\NuGetUtils.Lib.MSBuild\NuGetUtils.Lib.MSBuild.csproj", "{8A890835-D309-4074-8534-BCC2B3483CC0}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.Lib.Tool", "Code\NuGetUtils.Lib.Tool\NuGetUtils.Lib.Tool.csproj", "{A6097A06-8049-4085-B611-A688B5B702DC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetUtils.MSBuild.Deployment", "Code\NuGetUtils.MSBuild.Deployment\NuGetUtils.MSBuild.Deployment.csproj", "{581CD7F4-2034-4AE3-98B8-74C463FD7282}"
@@ -83,10 +81,6 @@ Global
 		{DB07C26E-4E9C-4AA0-8689-FA1B76070A27}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB07C26E-4E9C-4AA0-8689-FA1B76070A27}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB07C26E-4E9C-4AA0-8689-FA1B76070A27}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8A890835-D309-4074-8534-BCC2B3483CC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A890835-D309-4074-8534-BCC2B3483CC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A890835-D309-4074-8534-BCC2B3483CC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A890835-D309-4074-8534-BCC2B3483CC0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A6097A06-8049-4085-B611-A688B5B702DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A6097A06-8049-4085-B611-A688B5B702DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6097A06-8049-4085-B611-A688B5B702DC}.Release|Any CPU.ActiveCfg = Release|Any CPU

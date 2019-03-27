@@ -4,13 +4,6 @@
       <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
    </PropertyGroup>
 
-   <PropertyGroup>
-      <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-      <TreatSpecificWarningsAsErrors />
-      <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-      <LangVersion>latest</LangVersion>
-   </PropertyGroup>
-
   <PropertyGroup>
     <MicrosoftConfigurationVersion Condition=" '$(TargetFramework)' == 'net46' ">1.1.2</MicrosoftConfigurationVersion>
     <MicrosoftConfigurationVersion Condition=" '$(TargetFramework)' != 'net46' ">2.2.0</MicrosoftConfigurationVersion>

@@ -75,25 +75,31 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
       {
          var config = info.Configuration;
 
-         await WriteMethodInformationToFileAsync(
+         // Call WriteMethodInformationToFileAsync *inside* lambda, *before* the assembly loade is disposed.
+         await config.FindMethodForExecutingWithinNuGetAssemblyAsync(
             token,
             restorer,
-            config.PackageID,
-            config.PackageVersion,
-            config.InspectFilePath,
-            await config.FindMethodForExecutingWithinNuGetAssemblyAsync(
-               token,
-               restorer,
-               ( assemblyLoader, theAssembly, suitableMethod ) => Task.FromResult( theAssembly ),
+            async ( assemblyLoader, theAssembly, suitableMethod ) =>
+            {
+               await WriteMethodInformationToFileAsync(
+                     token,
+                     restorer,
+                     config.PackageID,
+                     config.PackageVersion,
+                     config.InspectFilePath,
+                     theAssembly
+                  );
+
+               return (Object) null;
+            },
 #if NET46
-               null
+            null
 #else
-               sdkPackageID,
-               sdkPackageVersion
+            sdkPackageID,
+            sdkPackageVersion
 #endif
-               , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
-            )
-            );
+            , getFiles: restorer.ThisFramework.CreateMSBuildExecGetFilesDelegate()
+         );
 
          return 0;
       }
@@ -130,7 +136,7 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
                   .SelectMany( t => t.GetTypeInfo().FindSuitableMethodsForNuGetExec( null ) )
                   .Select( method =>
                   {
-                     var returnType = method.ReturnParameter.ParameterType;
+                     var returnType = method.ReturnParameter.ParameterType.GetActualTypeForPropertiesScan();
                      return new MethodInspectionResult()
                      {
                         MethodToken = method.MetadataToken,
@@ -202,10 +208,20 @@ namespace NuGetUtils.MSBuild.Exec.Inspect
       {
          return
             !type.IsPrimitive // Boolean, Byte, SByte, Int16, UInt16, Int32, UInt32, Int64, UInt64, IntPtr, UIntPtr, Char, Double, and Single
+            && !type.IsEnum // No enums
             && !AdditionalPrimitiveTypes.Contains( type ) // Other "primitives"
             && !typeof( Delegate ).IsAssignableFrom( type ) // No delegates
             && ( !isInput || !NuGetExecutionUtils.SpecialTypesForMethodArguments.Contains( type ) ) // No 'special' types
             ;
+      }
+
+      public static Type GetActualTypeForPropertiesScan(
+         this Type type
+         )
+      {
+         return type.GetTypeInfo().IsGenericTaskOrValueTask() ?
+            type.GetGenericArguments()[0] :
+            ( typeof( Task ).IsAssignableFrom( type ) ? typeof( void ) : type );
       }
    }
 }

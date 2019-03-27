@@ -1,14 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.6;netstandard2.0;net46</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>netstandard1.0;netstandard2.0;net46</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Assembly information stuff -->

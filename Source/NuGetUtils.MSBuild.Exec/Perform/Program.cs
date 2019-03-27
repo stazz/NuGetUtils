@@ -24,6 +24,7 @@ using NuGetUtils.Lib.Tool.Agnostic;
 using NuGetUtils.MSBuild.Exec.Common;
 using NuGetUtils.MSBuild.Exec.Common.NuGetDependant;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
@@ -60,10 +61,21 @@ namespace NuGetUtils.MSBuild.Exec.Perform
       {
 
          var config = info.Configuration;
+         var specialValues = new Dictionary<Type, Func<Object>>()
+         {
+            { typeof(Func<String>), () => config.ProjectFilePath }
+         };
+
          var maybeResult = await config.ExecuteMethodAndSerializeReturnValue(
                token,
                restorer,
-               type => JsonConvert.DeserializeObject( config.InputProperties, type ),
+               type =>
+               {
+                  return specialValues.TryGetValue( type, out var factory ) ?
+                     factory() :
+                     JsonConvert.DeserializeObject( config.InputProperties, type )
+                     ;
+               },
 #if NET46
                null
 #else

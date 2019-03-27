@@ -5,13 +5,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
@@ -57,7 +50,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>2.0.4</VersionPrefix>
+    <VersionPrefix>2.0.5</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>Contains task factory to execute methods from assemblies of NuGet packages.</Description>
@@ -68,7 +61,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Cut down significantly the amount of process invocations for typical builds.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixed a bug which caused usage of assembly resolver after it has been disposed.</PackageReleaseNotes>
     <PackageTags>nuget utils msbuild exec</PackageTags>
     <Title>NuGetUtils: Package Executor MSBuild TaskFactory</Title>
 

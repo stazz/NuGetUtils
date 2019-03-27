@@ -61,7 +61,8 @@ namespace NuGetUtils.MSBuild.Exec
          this._entrypointMethod = ArgumentValidator.ValidateNotNull( nameof( entrypointMethod ), entrypointMethod );
          this._propertyInfos = generationResult
             .Properties
-            .ToImmutableDictionary( p => p.Name, p => new TaskPropertyHolder( p.Output, !Equals( p.PropertyType, typeof( String ) ) ) );
+            .Select( ( p, idx ) => (p, idx) )
+            .ToImmutableDictionary( t => t.p.Name, t => new TaskPropertyHolder( generationResult.PropertyTypeNames[t.idx], t.p.Output, !Equals( t.p.PropertyType, typeof( String ) ) ) );
          this._cancellationTokenSource = new CancellationTokenSource();
       }
 
@@ -124,6 +125,7 @@ namespace NuGetUtils.MSBuild.Exec
                   MethodToken = this._entrypointMethod.MethodToken,
                   AssemblyPath = this._initializationArgs.AssemblyPath,
 
+                  ProjectFilePath = be?.ProjectFileOfTaskNode,
                   ShutdownSemaphoreName = NuGetUtilsExecProcessMonitor.CreateNewShutdownSemaphoreName(),
                   ReturnValuePath = tempFileLocation,
                   InputProperties = new JObject(
@@ -214,14 +216,17 @@ namespace NuGetUtils.MSBuild.Exec
       internal sealed class TaskPropertyHolder
       {
          public TaskPropertyHolder(
+            String propertyTypeName,
             Boolean isOutput,
             Boolean isTaskItemArray
             )
          {
             this.IsOutput = isOutput;
+            this.PropertyTypeName = ArgumentValidator.ValidateNotEmpty( nameof( propertyTypeName ), propertyTypeName );
             this.IsTaskItemArray = isTaskItemArray;
          }
 
+         public String PropertyTypeName { get; }
          public Boolean IsOutput { get; }
          public Boolean IsTaskItemArray { get; }
          public Object Value { get; set; }
@@ -239,14 +244,70 @@ public static partial class E_NuGetUtils
    {
       var val = propertyHolder.Value;
       return propertyHolder.IsTaskItemArray ?
-         (JToken) new JArray( ( (ITaskItem[]) val ).Select( v => v.ItemSpec ).ToArray() ) :
+         (JToken) new JArray( ( (ITaskItem[]) val ).Select( v => v.GetJTokenFromTaskItem( propertyHolder.PropertyTypeName ) ).ToArray() ) :
          new JValue( val );
    }
 
    internal static Object GetOutputPropertyValue( this TaskProxy.TaskPropertyHolder propertyHolder, JToken token )
    {
       return propertyHolder.IsTaskItemArray ?
-         (Object) ( ( token as JArray )?.Select( j => new TaskItem( ( j as JValue )?.Value?.ToString() ?? "" ) )?.ToArray() ?? Empty<TaskItem>.Array ) :
+         (Object) ( ( token as JArray )?.Select( j => j.GetTaskItemFromJToken() )?.Where( t => t != null )?.ToArray() ?? Empty<ITaskItem>.Array ) :
          ( token as JValue )?.Value?.ToString();
+   }
+
+   const String ITEM_SPEC = "ItemSpec";
+
+   private static JToken GetJTokenFromTaskItem(
+      this ITaskItem item,
+      String targetTypeName
+      )
+   {
+      JToken jToken;
+      switch ( targetTypeName )
+      {
+         case "System.String[]":
+            jToken = new JValue( item.ItemSpec );
+            break;
+         default:
+            jToken = new JObject( item.MetadataNames
+               .OfType<String>()
+               .Select( mdName => new JProperty( mdName, new JValue( item.GetMetadata( mdName ) ) ) )
+               .Prepend( new JProperty( ITEM_SPEC, item.ItemSpec ) )
+               .ToArray()
+               );
+            break;
+      }
+      return jToken;
+   }
+
+   private static ITaskItem GetTaskItemFromJToken(
+      this JToken token
+      )
+   {
+      ITaskItem retVal;
+      switch ( token )
+      {
+         case JValue value:
+            retVal = new TaskItem( value.Value?.ToString() ?? "" );
+            break;
+         case JObject obj:
+            retVal = new TaskItem(
+               obj.Property( ITEM_SPEC ).GetItemMetaData(),
+               obj.Properties()
+                  .Where( p => !String.Equals( p.Name, ITEM_SPEC ) )
+                  .ToDictionary( p => p.Name, p => p.GetItemMetaData() )
+               );
+            break;
+         default:
+            retVal = null;
+            break;
+      }
+
+      return retVal;
+   }
+
+   private static String GetItemMetaData( this JProperty jProp )
+   {
+      return ( jProp?.Value as JValue )?.Value?.ToString() ?? "";
    }
 }

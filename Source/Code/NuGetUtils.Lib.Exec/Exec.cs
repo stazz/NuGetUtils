@@ -222,22 +222,22 @@ namespace NuGetUtils.Lib.Exec
          if ( entryPointMethodName.IsNullOrEmpty() )
          {
             var props =
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                new HashSet<MethodInfo>(
 #endif
                type.DeclaredProperties.SelectMany( GetPropertyMethods ).Where( m => m != null )
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                )
 #else
                .ToHashSet()
 #endif
                ;
             var evts =
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                new HashSet<MethodInfo>(
 #endif
                type.DeclaredEvents.SelectMany( GetEventMethods ).Where( m => m != null )
-#if NET46 || NETSTANDARD1_6
+#if NET46 || NETSTANDARD1_6 || NETSTANDARD2_0
                )
 #else
                .ToHashSet()
@@ -276,6 +276,25 @@ namespace NuGetUtils.Lib.Exec
          }
 #endif
       }
+
+      /// <summary>
+      /// This helper method checks whether this <see cref="TypeInfo" /> is <see cref="ValueTask{T}"/> or <see cref="Task{T}" />.
+      /// </summary>
+      /// <param name="type">This <see cref="TypeInfo" />.</param>
+      /// <returns><c>true</c> if this <see cref="TypeInfo" /> represents <see cref="ValueTask{T}"/> or <see cref="Task{T}" />; <c>false</c> otherwise.</returns>
+      public static Boolean IsGenericTaskOrValueTask( this TypeInfo type )
+      {
+         return ( type.IsGenericType && type.GenericTypeArguments.Length == 1 && Equals( type.GetGenericTypeDefinition(), typeof( ValueTask<> ) ) ) // Check for ValueTask<X>
+            ||
+            // The real return type of e.g. Task<X> is System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[X,SomeDelegateType], so we need to explore base types of return value.
+            type
+               .AsSingleBranchEnumerable( t => t.BaseType?.GetTypeInfo(), includeFirst: true )
+               .Any( t =>
+                     t.IsGenericType
+                     && t.GenericTypeArguments.Length == 1
+                     && Equals( t.GetGenericTypeDefinition(), typeof( Task<> ) )
+                  );
+      }
    }
 
 
@@ -295,6 +314,7 @@ namespace NuGetUtils.Lib.Exec
          typeof(TNuGetPackageResolverCallback),
          typeof(TNuGetPackagesResolverCallback),
          typeof(TTypeStringResolverCallback)
+         // Func<String> is currently reserved for NuGetUtils.MSBuild.Exec to return the project file path.
       }.ToImmutableHashSet();
    }
 }
@@ -628,19 +648,7 @@ public static partial class E_NuGetUtils
          default:
             var type = invocationResult.GetType().GetTypeInfo();
             // We must *first* check for Task<T>, since Task<T> extends Task
-            if (
-               ( ( type.IsGenericType && type.GenericTypeArguments.Length == 1 && Equals( type.GetGenericTypeDefinition(), typeof( ValueTask<> ) ) ) // Check for ValueTask<X>
-               ||
-                  // The real return type of e.g. Task<X> is System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[X,SomeDelegateType], so we need to explore base types of return value.
-                  type
-                     .AsSingleBranchEnumerable( t => t.BaseType?.GetTypeInfo(), includeFirst: true )
-                     .Any( t =>
-                         t.IsGenericType
-                         && t.GenericTypeArguments.Length == 1
-                         && Equals( t.GetGenericTypeDefinition(), typeof( Task<> ) )
-                      )
-                   )
-                )
+            if ( type.IsGenericTaskOrValueTask() )
             {
                // This handles Task<T> and ValueTask<T>
                retVal = await (dynamic) invocationResult;

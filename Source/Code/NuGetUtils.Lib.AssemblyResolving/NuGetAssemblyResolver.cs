@@ -821,6 +821,7 @@ namespace NuGetUtils.Lib.AssemblyResolving
 #else
       private readonly NuGetAssemblyLoadContext _loader;
 #endif
+      private Boolean _disposed;
 
       public NuGetAssemblyResolverImpl(
 #if NET45 || NET46
@@ -923,6 +924,7 @@ namespace NuGetUtils.Lib.AssemblyResolving
 
       public void Dispose()
       {
+         this._disposed = true;
 #if NET45 || NET46
          AppDomain.CurrentDomain.AssemblyResolve -= this.CurrentDomain_AssemblyResolve;
 #else
@@ -938,6 +940,11 @@ namespace NuGetUtils.Lib.AssemblyResolving
          CancellationToken token
          )
       {
+         if ( this._disposed )
+         {
+            throw new ObjectDisposedException( "" );
+         }
+
          Assembly[] retVal;
          if ( packageIDs != null
             && packageVersions != null
@@ -1058,6 +1065,11 @@ namespace NuGetUtils.Lib.AssemblyResolving
 
       private Assembly TryResolveFromPreviouslyLoaded( AssemblyName assemblyName, Boolean invokeEvent )
       {
+         if ( this._disposed )
+         {
+            throw new ObjectDisposedException( "" );
+         }
+
          Assembly retVal;
          if (
             assemblyName != null
