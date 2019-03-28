@@ -18,7 +18,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>Provides some common abstractions and utilities for other NuGetUtils packages.</Description>
@@ -29,7 +29,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Initial release after renaming the project from UtilPack.NuGet.</PackageReleaseNotes>
+    <PackageReleaseNotes>Various improvements and bug fixes as part of NuGetUtils.MSBuild.Exec rewrite.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions restore</PackageTags>
     <Title>NuGetUtils: Common Abstractions</Title>
   </PropertyGroup>

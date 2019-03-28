@@ -17,7 +17,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+    <PackageReleaseNotes>Various improvements and bug fixes as part of NuGetUtils.MSBuild.Exec rewrite.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions tool agnostic</PackageTags>
     <Title>NuGetUtils: Tool Helper Agnostic Part</Title>
   </PropertyGroup>
