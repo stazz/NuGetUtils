@@ -20,7 +20,7 @@
       <VersionPrefix>1.0.0</VersionPrefix>
       <VersionSuffix></VersionSuffix>
       <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
-      <Description>Library containing functionality to execute a method from dynamically loaded assembly located in NuGet package. The functionality is defined as extension method for NuGetExecutionConfiguration interface, which is in this package.</Description>
+      <Description>Library containing functionality to execute a method from dynamically loaded assembly located in NuGet package. The functionality is defined as extension method for NuGetExecutionConfiguration interface, which is in NuGetUtils.Lib.Exec.Agnostic package.</Description>
    </PropertyGroup>
 
    <!-- NuGet package stuff -->

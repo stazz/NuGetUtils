@@ -27,7 +27,7 @@
     <VersionPrefix>1.0.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
-    <Description>Library containing extension methods for deploying NuGet packages so that they can be directly executed by dotnet tool. The extension methods are defined for NuGetDeploymentConfiguration interface which is in this package.</Description>
+    <Description>Library containing extension methods for deploying NuGet packages so that they can be directly executed by dotnet. The extension methods are defined for NuGetDeploymentConfiguration interface which is in this package.</Description>
   </PropertyGroup>
 
   <!-- NuGet package stuff -->
