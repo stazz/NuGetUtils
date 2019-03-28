@@ -14,7 +14,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>MSBuild task to push packages. Most suitable to use in rapid development builds, where each build should propagate to (local) NuGet feed. The task in this package should be loaded by NuGetUtils.MSBuild.Exec task factory.</Description>
@@ -25,7 +25,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Initial release after renaming from UtilPack.NuGet.Push.MSBuild.</PackageReleaseNotes>
+    <PackageReleaseNotes>Various improvements and bug fixes as part of NuGetUtils.MSBuild.Exec rewrite.</PackageReleaseNotes>
     <PackageTags>utility nuget extensions nuget msbuild push</PackageTags>
     <Title>NuGetUtils: NuGet Push MSBuild Task</Title>
   </PropertyGroup>

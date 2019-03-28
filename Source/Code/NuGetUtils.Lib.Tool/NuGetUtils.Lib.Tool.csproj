@@ -24,7 +24,7 @@
 
    <!-- Assembly information stuff -->
    <PropertyGroup>
-      <VersionPrefix>1.0.0</VersionPrefix>
+      <VersionPrefix>2.0.0</VersionPrefix>
       <VersionSuffix></VersionSuffix>
       <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
       <Description>Provides common abstractions for NuGetUtils global .NET Core tools.</Description>
@@ -35,7 +35,7 @@
       <PackageId>$(AssemblyName)</PackageId>
       <PackageVersion>$(VersionPrefix)</PackageVersion>
       <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-      <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+      <PackageReleaseNotes>Various improvements and bug fixes as part of NuGetUtils.MSBuild.Exec rewrite.</PackageReleaseNotes>
       <PackageTags>utility nuget extensions restore</PackageTags>
       <Title>NuGetUtils: Common Tool Abstractions</Title>
    </PropertyGroup>
